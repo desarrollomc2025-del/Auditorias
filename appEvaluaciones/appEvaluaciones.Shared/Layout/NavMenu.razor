@@ -1,8 +1,8 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">appEvaluaciones</a>
     </div>
-</div>
+    </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
@@ -14,27 +14,29 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
+        <!-- Menú Catálogos con sub-items -->
+        <div class="nav-item px-3 mt-3">
+            <button class="nav-link btn btn-link text-decoration-none px-0" @onclick:stopPropagation="true" @onclick="ToggleCatalogos" aria-expanded="@catalogosOpen" type="button">
+                <span aria-hidden="true">@(catalogosOpen ? "▾" : "▸")</span> Catálogos
+            </button>
         </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="tiendas">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tiendas
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="empresas">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Empresas
-            </NavLink>
-        </div>
+        @if (catalogosOpen)
+        {
+            <div class="nav-item px-4">
+                <NavLink class="nav-link" href="tiendas">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tiendas
+                </NavLink>
+            </div>
+            <div class="nav-item px-4">
+                <NavLink class="nav-link" href="empresas">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Empresas
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
 
+@code {
+    private bool catalogosOpen = false;
+    private void ToggleCatalogos() => catalogosOpen = !catalogosOpen;
+}

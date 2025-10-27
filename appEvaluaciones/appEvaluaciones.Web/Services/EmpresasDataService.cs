@@ -29,14 +29,20 @@ public sealed class EmpresasDataService(ISqlConnectionFactory factory) : IEmpres
         using IDbConnection db = factory.Create();
         const string sql = @"IF EXISTS(SELECT 1 FROM dbo.Empresas WHERE EmpresaId=@EmpresaId)
 BEGIN
-    UPDATE dbo.Empresas SET Codigo=@Codigo, Nombre=@Nombre, Direccion=@Direccion, Eliminado=@Eliminado
+    -- No permitir cambiar el Código al actualizar
+    UPDATE dbo.Empresas SET Nombre=@Nombre, Direccion=@Direccion, Eliminado=@Eliminado
     WHERE EmpresaId=@EmpresaId;
     SELECT @EmpresaId;
 END
 ELSE
 BEGIN
+    -- Generar Código incremental automáticamente al insertar
+    DECLARE @NuevoCodigo VARCHAR(50);
+    SELECT @NuevoCodigo = CAST(ISNULL(MAX(TRY_CAST(Codigo AS INT)), 0) + 1 AS VARCHAR(50))
+    FROM dbo.Empresas WITH (UPDLOCK, HOLDLOCK);
+
     INSERT INTO dbo.Empresas(Codigo, Nombre, Direccion, Eliminado, FechaCreacion)
-    VALUES(@Codigo, @Nombre, @Direccion, @Eliminado, SYSUTCDATETIME());
+    VALUES(@NuevoCodigo, @Nombre, @Direccion, @Eliminado, SYSUTCDATETIME());
     SELECT CAST(SCOPE_IDENTITY() AS INT);
 END";
         return await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, empresa, cancellationToken: ct));
