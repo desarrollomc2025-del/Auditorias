@@ -1,0 +1,113 @@
+@page "/tiendas"
+@inject ITiendasService TiendasService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Tiendas</PageTitle>
+
+<h1>Tiendas</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="Nueva">Nueva tienda</button>
+    <button class="btn btn-secondary ms-2" @onclick="Reload">Refrescar</button>
+  </div>
+
+@if (loading)
+{
+    <p>Cargando...</p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Empresa</th>
+                <th>Código</th>
+                <th>Interno</th>
+                <th>Descripción</th>
+                <th>Mapa</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var t in tiendas)
+        {
+            <tr>
+                <td>@t.TiendaId</td>
+                <td>@t.EmpresaId</td>
+                <td>@t.Codigo</td>
+                <td>@t.CodigoInterno</td>
+                <td>@t.Descripcion</td>
+                <td>
+                    @if (t.Latitud is not null && t.Longitud is not null)
+                    {
+                        var imgUrl = MapUrl(t.Latitud.Value, t.Longitud.Value, 200, 120, 15);
+                        var linkUrl = MapLinkUrl(t.Latitud.Value, t.Longitud.Value);
+                        <a href="@linkUrl" target="_blank" rel="noopener noreferrer" title="Abrir mapa en nueva pestaña">
+                            <img src="@imgUrl" alt="Mapa" width="200" height="120" style="object-fit:cover;border-radius:6px;border:1px solid #ddd;" />
+                        </a>
+                    }
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => Editar(t.TiendaId)">Editar</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Eliminar(t.TiendaId)">Eliminar</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Tienda> tiendas = new();
+    private bool loading = true;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            tiendas = (await TiendasService.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void Nueva() => Nav.NavigateTo("/tiendas/new");
+    private void Editar(int id) => Nav.NavigateTo($"/tiendas/{id}");
+    private async Task Eliminar(int id)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar tienda {id} definitivamente?"))
+        {
+            await TiendasService.DeleteAsync(id);
+            await Load();
+            StateHasChanged();
+        }
+    }
+
+    private Task Reload() => Load();
+
+    private static string MapUrl(double lat, double lng, int width, int height, int zoom)
+        => $"https://staticmap.openstreetmap.de/staticmap.php?center={lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}&zoom={zoom}&size={width}x{height}&markers={lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)},lightblue1";
+
+    private static string MapLinkUrl(double lat, double lng)
+        => $"https://www.google.com/maps?q={lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+}

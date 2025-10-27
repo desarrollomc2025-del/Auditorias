@@ -1,0 +1,95 @@
+@page "/empresas"
+@inject IEmpresasService EmpresasService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Empresas</PageTitle>
+
+<h1>Empresas</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="Nueva">Nueva empresa</button>
+    <button class="btn btn-secondary ms-2" @onclick="Reload">Refrescar</button>
+  </div>
+
+@if (loading)
+{
+    <p>Cargando...</p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var e in empresas)
+        {
+            <tr>
+                <td>@e.EmpresaId</td>
+                <td>@e.Codigo</td>
+                <td>@e.Nombre</td>
+                <td>@e.Direccion</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => Editar(e.EmpresaId)">Editar</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Eliminar(e.EmpresaId)">Eliminar</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Empresa> empresas = new();
+    private bool loading = true;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            empresas = (await EmpresasService.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void Nueva() => Nav.NavigateTo("/empresas/new");
+    private void Editar(int id) => Nav.NavigateTo($"/empresas/{id}");
+    private async Task Eliminar(int id)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar empresa {id} definitivamente?"))
+        {
+            await EmpresasService.DeleteAsync(id);
+            await Load();
+            StateHasChanged();
+        }
+    }
+
+    private Task Reload() => Load();
+}
+

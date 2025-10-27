@@ -1,0 +1,34 @@
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if any)
+node_modules/
+
+# MAUI/Android
+appEvaluaciones/appEvaluaciones/obj/
+appEvaluaciones/appEvaluaciones/bin/
+appEvaluaciones/appEvaluaciones.Web/obj/
+appEvaluaciones/appEvaluaciones.Web/bin/
+appEvaluaciones/appEvaluaciones.Shared/obj/
+appEvaluaciones/appEvaluaciones.Shared/bin/
+
+# User-specific project settings
+**/*.csproj.user
+
+# Logs
+*.log

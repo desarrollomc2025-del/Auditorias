@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/appEvaluaciones/">
+    <Project Path="appEvaluaciones/appEvaluaciones.Shared/appEvaluaciones.Shared.csproj" />
+    <Project Path="appEvaluaciones/appEvaluaciones.Web/appEvaluaciones.Web.csproj" />
+    <Project Path="appEvaluaciones/appEvaluaciones/appEvaluaciones.csproj" />
+  </Folder>
+</Solution>
