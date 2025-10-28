@@ -1,0 +1,120 @@
+@page "/gerentes/new"
+@page "/gerentes/{id:int}"
+@inject IGerentesService GerentesService
+@inject NavigationManager Nav
+
+<PageTitle>Gerente</PageTitle>
+
+<h3>@(isNew ? "Nuevo gerente" : $"Editar gerente #{model.GerenteId}")</h3>
+
+@if (loading)
+{
+    <p>Cargando...</p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="Guardar">
+        <div class="mb-3">
+            <label class="form-label">Código</label>
+            <input class="form-control" @bind-value="model.Codigo" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input class="form-control" @bind-value="model.Nombre" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Rol</label>
+            <select class="form-select" value="@model.Rol" @onchange="OnRolChanged">
+                <option value="Regional">Regional</option>
+                <option value="Area">Area</option>
+            </select>
+        </div>
+        @if (string.Equals(model.Rol, "Area", StringComparison.OrdinalIgnoreCase))
+        {
+            <div class="mb-3">
+                <label class="form-label">Gerente Regional</label>
+                <select class="form-select" @bind="model.GerenteRegionalId">
+                    <option value="">-- Seleccione --</option>
+                    @foreach (var r in regionales)
+                    {
+                        <option value="@r.GerenteId">@r.Codigo - @r.Nombre</option>
+                    }
+                </select>
+            </div>
+        }
+        <div class="form-check my-3">
+            <input class="form-check-input" type="checkbox" id="activoG" @bind-value="model.Activo" />
+            <label class="form-check-label" for="activoG">Activo</label>
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-primary" type="submit">Guardar</button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="Volver">Cancelar</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool isNew => !Id.HasValue;
+    private bool loading = true;
+    private string? error;
+    private Gerente model = new()
+    {
+        Rol = "Regional",
+        Activo = true,
+        FechaCreacion = DateTime.UtcNow
+    };
+    private List<Gerente> regionales = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        error = null;
+        try
+        {
+            regionales = (await GerentesService.GetRegionalesAsync()).ToList();
+
+            if (Id is { } id && id > 0)
+            {
+                var existing = await GerentesService.GetByIdAsync(id);
+                if (existing is null)
+                {
+                    error = "No se encontró el gerente";
+                }
+                else
+                {
+                    model = existing;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void OnRolChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "Regional";
+        model.Rol = value;
+        if (string.Equals(model.Rol, "Regional", StringComparison.OrdinalIgnoreCase))
+            model.GerenteRegionalId = null;
+    }
+
+    private async Task Guardar()
+    {
+        await GerentesService.UpsertAsync(model);
+        Volver();
+    }
+
+    private void Volver() => Nav.NavigateTo("/gerentes");
+}

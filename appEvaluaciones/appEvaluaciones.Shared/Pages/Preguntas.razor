@@ -1,0 +1,103 @@
+@page "/preguntas"
+@inject IPreguntasService PreguntasService
+@inject ICategoriasService CategoriasService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Preguntas</PageTitle>
+
+<h1>Preguntas</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="Nueva">Nueva pregunta</button>
+    <button class="btn btn-secondary ms-2" @onclick="Reload">Refrescar</button>
+  </div>
+
+@if (loading)
+{
+    <p>Cargando...</p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Categoria</th>
+                <th>Código</th>
+                <th>Texto</th>
+                <th>Ponderación</th>
+                <th>Orden</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var p in items)
+        {
+            var cat = categorias.FirstOrDefault(c => c.CategoriaId == p.CategoriaId);
+            <tr>
+                <td>@p.PreguntaId</td>
+                <td>@(cat is null ? p.CategoriaId.ToString() : $"{cat.Codigo} - {cat.Descripcion}")</td>
+                <td>@p.Codigo</td>
+                <td>@p.TextoPregunta</td>
+                <td>@p.Ponderacion</td>
+                <td>@p.Orden</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => Editar(p.PreguntaId)">Editar</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Eliminar(p.PreguntaId)">Eliminar</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Pregunta> items = new();
+    private List<Categoria> categorias = new();
+    private bool loading = true;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            categorias = (await CategoriasService.GetAllAsync()).ToList();
+            items = (await PreguntasService.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void Nueva() => Nav.NavigateTo("/preguntas/new");
+    private void Editar(int id) => Nav.NavigateTo($"/preguntas/{id}");
+    private async Task Eliminar(int id)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar pregunta {id} definitivamente?"))
+        {
+            await PreguntasService.DeleteAsync(id);
+            await Load();
+            StateHasChanged();
+        }
+    }
+
+    private Task Reload() => Load();
+}
+

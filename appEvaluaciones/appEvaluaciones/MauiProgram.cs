@@ -67,6 +67,42 @@ public static class MauiProgram
             return new TiposTiendaServiceProxy(online, offline, connectivity);
         });
 
+        builder.Services.AddSingleton<IEvaluadoresService>(sp =>
+        {
+            var http = sp.GetRequiredService<HttpClient>();
+            var connectivity = sp.GetRequiredService<IConnectivity>();
+            var online = new ApiEvaluadoresService(http);
+            var offline = new SqliteEvaluadoresService();
+            return new EvaluadoresServiceProxy(online, offline, connectivity);
+        });
+
+        builder.Services.AddSingleton<IGerentesService>(sp =>
+        {
+            var http = sp.GetRequiredService<HttpClient>();
+            var connectivity = sp.GetRequiredService<IConnectivity>();
+            var online = new ApiGerentesService(http);
+            var offline = new SqliteGerentesService();
+            return new GerentesServiceProxy(online, offline, connectivity);
+        });
+
+        builder.Services.AddSingleton<ICategoriasService>(sp =>
+        {
+            var http = sp.GetRequiredService<HttpClient>();
+            var connectivity = sp.GetRequiredService<IConnectivity>();
+            var online = new ApiCategoriasService(http);
+            var offline = new SqliteCategoriasService();
+            return new CategoriasServiceProxy(online, offline, connectivity);
+        });
+
+        builder.Services.AddSingleton<IPreguntasService>(sp =>
+        {
+            var http = sp.GetRequiredService<HttpClient>();
+            var connectivity = sp.GetRequiredService<IConnectivity>();
+            var online = new ApiPreguntasService(http);
+            var offline = new SqlitePreguntasService();
+            return new PreguntasServiceProxy(online, offline, connectivity);
+        });
+
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
         builder.Logging.AddDebug();

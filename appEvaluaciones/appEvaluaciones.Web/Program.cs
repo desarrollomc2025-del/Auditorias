@@ -15,6 +15,10 @@ builder.Services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped<ITiendasService, TiendasDataService>();
 builder.Services.AddScoped<IEmpresasService, EmpresasDataService>();
 builder.Services.AddScoped<ITiposTiendaService, TiposTiendaDataService>();
+builder.Services.AddScoped<IEvaluadoresService, EvaluadoresDataService>();
+builder.Services.AddScoped<IGerentesService, GerentesDataService>();
+builder.Services.AddScoped<ICategoriasService, CategoriasDataService>();
+builder.Services.AddScoped<IPreguntasService, PreguntasDataService>();
 
 var app = builder.Build();
 
@@ -41,5 +45,9 @@ app.MapRazorComponents<App>()
 app.MapTiendas();
 app.MapEmpresas();
 app.MapTiposTienda();
+app.MapEvaluadores();
+app.MapGerentes();
+app.MapCategorias();
+app.MapPreguntas();
 
 app.Run();

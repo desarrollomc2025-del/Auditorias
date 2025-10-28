@@ -1,0 +1,89 @@
+@page "/evaluadores/new"
+@page "/evaluadores/{id:int}"
+@inject IEvaluadoresService EvaluadoresService
+@inject NavigationManager Nav
+
+<PageTitle>Evaluador</PageTitle>
+
+<h3>@(isNew ? "Nuevo evaluador" : $"Editar evaluador #{model.EvaluadorId}")</h3>
+
+@if (loading)
+{
+    <p>Cargando...</p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="Guardar">
+        <div class="mb-3">
+            <label class="form-label">Código</label>
+            <input class="form-control" @bind-value="model.Codigo" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input class="form-control" @bind-value="model.Nombre" />
+        </div>
+        <div class="form-check my-3">
+            <input class="form-check-input" type="checkbox" id="activo" @bind-value="model.Activo" />
+            <label class="form-check-label" for="activo">Activo</label>
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-primary" type="submit">Guardar</button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="Volver">Cancelar</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool isNew => !Id.HasValue;
+    private bool loading = true;
+    private string? error;
+    private Evaluador model = new()
+    {
+        Activo = true,
+        FechaCreacion = DateTime.UtcNow
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        error = null;
+        try
+        {
+            if (Id is { } id && id > 0)
+            {
+                var existing = await EvaluadoresService.GetByIdAsync(id);
+                if (existing is null)
+                {
+                    error = "No se encontró el evaluador";
+                }
+                else
+                {
+                    model = existing;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task Guardar()
+    {
+        await EvaluadoresService.UpsertAsync(model);
+        Volver();
+    }
+
+    private void Volver() => Nav.NavigateTo("/evaluadores");
+}
+
