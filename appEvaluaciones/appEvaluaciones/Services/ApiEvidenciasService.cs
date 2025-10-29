@@ -27,7 +27,11 @@ public sealed class ApiEvidenciasService(HttpClient http) : IEvidenciasService
         content.Add(new StringContent(preguntaId.ToString()), "preguntaId");
         content.Add(new StringContent(comentario ?? string.Empty), "comentario");
 
+<<<<<<< HEAD
         var stream = file.OpenReadStream(5 * 1024 * 1024); // 5 MB
+=======
+        var stream = file.OpenReadStream(5 * 1024 * 1024);
+>>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
         var fileContent = new StreamContent(stream);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
         content.Add(fileContent, "file", file.Name);
@@ -37,3 +41,7 @@ public sealed class ApiEvidenciasService(HttpClient http) : IEvidenciasService
         return (await resp.Content.ReadFromJsonAsync<Evidencia>(cancellationToken: ct))!;
     }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
