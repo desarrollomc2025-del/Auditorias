@@ -1,0 +1,178 @@
+@page "/evaluacion"
+@inject IPreguntasService PreguntasService
+@inject IEvidenciasService EvidenciasService
+
+<PageTitle>Evaluación</PageTitle>
+
+<h1>Evaluación</h1>
+
+@if (loading)
+{
+    <p>Cargando preguntas...</p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <div class="alert alert-info">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <div><strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)</div>
+            <div class="text-muted small">Evaluación: @evaluacionKey</div>
+        </div>
+    </div>
+
+    <EditForm Model="answers">
+        @foreach (var q in preguntas)
+        {
+            <div class="mb-3 pb-2 border-bottom">
+                <div class="fw-semibold">[@q.Codigo] @q.TextoPregunta <span class="text-muted">(máx. @q.Ponderacion.ToString("0.###"))</span></div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id=@($"q_{q.PreguntaId}_si") name=@($"q_{q.PreguntaId}") checked=@(answers[q.PreguntaId] == true) @onchange=@(() => SetAnswer(q.PreguntaId, true)) />
+                    <label class="form-check-label" for=@($"q_{q.PreguntaId}_si")>Sí</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id=@($"q_{q.PreguntaId}_no") name=@($"q_{q.PreguntaId}") checked=@(answers[q.PreguntaId] == false) @onchange=@(() => SetAnswer(q.PreguntaId, false)) />
+                    <label class="form-check-label" for=@($"q_{q.PreguntaId}_no")>No</label>
+                </div>
+
+                <div class="mt-2">
+                    <label class="form-label">Comentario (opcional)</label>
+                    <textarea class="form-control" rows="2" @bind-value="comentarios[q.PreguntaId]" @bind-value:event="oninput"></textarea>
+                    <div class="mt-1">
+                        <button class="btn btn-sm btn-outline-primary" type="button" @onclick="() => GuardarComentario(q.PreguntaId)">Guardar comentario</button>
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <label class="form-label">Evidencias (fotos, opcional)</label>
+                    <InputFile OnChange="@(e => OnFilesSelected(q.PreguntaId, e))" accept="image/*" multiple />
+                    @if (evidencias.TryGetValue(q.PreguntaId, out var list) && list.Count > 0)
+                    {
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            @foreach (var ev in list)
+                            {
+                                <div class="border rounded p-1" style="width:120px">
+                                    @if (!string.IsNullOrWhiteSpace(ev.Url))
+                                    {
+                                        <img src="@ev.Url" alt="Evidencia" class="img-fluid" style="object-fit:cover;width:100%;height:80px;border-radius:4px;" />
+                                    }
+                                    <div class="small text-truncate" title="@ev.Comentario">@ev.Comentario</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-primary" @onclick="Calcular">Calcular puntaje</button>
+            <span class="ms-3 align-middle">Total: <strong>@total.ToString("0.###")</strong> / @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)</span>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private bool loading = true;
+    private string? error;
+    private List<Pregunta> preguntas = new();
+    private Dictionary<int, bool?> answers = new();
+    private Guid evaluacionKey = Guid.Empty;
+    private Dictionary<int, string?> comentarios = new();
+    private Dictionary<int, List<Evidencia>> evidencias = new();
+
+    private decimal maximo;
+    private decimal total;
+    private decimal porcentaje;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            var all = await PreguntasService.GetAllAsync();
+            preguntas = all.OrderBy(p => p.CategoriaId).ThenBy(p => p.Orden).ThenBy(p => p.PreguntaId).ToList();
+            evaluacionKey = Guid.NewGuid();
+            answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)null);
+            comentarios = preguntas.ToDictionary(p => p.PreguntaId, _ => (string?)null);
+            evidencias = preguntas.ToDictionary(p => p.PreguntaId, _ => new List<Evidencia>());
+            maximo = preguntas.Sum(p => p.Ponderacion);
+            Calcular();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void SetAnswer(int preguntaId, bool value)
+    {
+        answers[preguntaId] = value;
+        Calcular();
+        StateHasChanged();
+    }
+
+    private void Calcular()
+    {
+        total = 0m;
+        foreach (var p in preguntas)
+        {
+            if (answers.TryGetValue(p.PreguntaId, out var v) && v == true)
+            {
+                total += p.Ponderacion;
+            }
+        }
+        porcentaje = maximo > 0 ? decimal.Round((total / maximo) * 100m, 2) : 0m;
+    }
+
+    private async Task OnFilesSelected(int preguntaId, InputFileChangeEventArgs e)
+    {
+        if (!evidencias.TryGetValue(preguntaId, out var list))
+        {
+            list = new List<Evidencia>();
+            evidencias[preguntaId] = list;
+        }
+
+        foreach (var file in e.GetMultipleFiles())
+        {
+            try
+            {
+                var ev = await EvidenciasService.UploadAsync(evaluacionKey, preguntaId, comentarios[preguntaId], file);
+                list.Add(ev);
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task GuardarComentario(int preguntaId)
+    {
+        try
+        {
+            var c = comentarios.TryGetValue(preguntaId, out var txt) ? txt : null;
+            if (string.IsNullOrWhiteSpace(c)) return;
+            var ev = await EvidenciasService.AddAsync(evaluacionKey, preguntaId, c);
+            if (!evidencias.TryGetValue(preguntaId, out var list))
+            {
+                list = new List<Evidencia>();
+                evidencias[preguntaId] = list;
+            }
+            list.Add(ev);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}

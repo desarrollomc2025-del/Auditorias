@@ -24,17 +24,28 @@ public static class MauiProgram
         builder.Services.AddMauiBlazorWebView();
 
         // HTTP client to Web backend (adjust BaseAddress to your server)
+#if ANDROID
+        // Android emulator reaches the host via 10.0.2.2. Use HTTPS dev port.
+        // In DEBUG, relax cert validation only for development convenience.
+        HttpClientHandler androidHandler = new();
+#if DEBUG
+        androidHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+#endif
+        builder.Services.AddSingleton(new HttpClient(androidHandler)
+        {
+            BaseAddress = new Uri("https://10.0.2.2:7144/")
+        });
+#elif WINDOWS
         builder.Services.AddSingleton(new HttpClient
         {
-#if ANDROID
-            // Maps to host machine from Android emulator
-            BaseAddress = new Uri("http://10.0.2.2:5098/")
-#elif WINDOWS
-            BaseAddress = new Uri("http://localhost:5098/")
-#else
-            BaseAddress = new Uri("http://localhost:5098/")
-#endif
+            BaseAddress = new Uri("https://localhost:7144/")
         });
+#else
+        builder.Services.AddSingleton(new HttpClient
+        {
+            BaseAddress = new Uri("https://localhost:7144/")
+        });
+#endif
 
         // Essentials: IConnectivity
         builder.Services.AddSingleton<IConnectivity>(Connectivity.Current);
@@ -101,6 +112,13 @@ public static class MauiProgram
             var online = new ApiPreguntasService(http);
             var offline = new SqlitePreguntasService();
             return new PreguntasServiceProxy(online, offline, connectivity);
+        });
+
+        // Evidencias: solo online (API)
+        builder.Services.AddSingleton<IEvidenciasService>(sp =>
+        {
+            var http = sp.GetRequiredService<HttpClient>();
+            return new ApiEvidenciasService(http);
         });
 
 #if DEBUG
