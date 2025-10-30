@@ -7,7 +7,7 @@ namespace appEvaluaciones.Services;
 public sealed class ApiEvaluadoresService(HttpClient http) : IEvaluadoresService
 {
     public async Task<IReadOnlyList<Evaluador>> GetAllAsync(CancellationToken ct = default)
-        => await (http.GetFromJsonAsync<List<Evaluador>>("api/evaluadores", ct) ?? Task.FromResult(new List<Evaluador>()));
+        => (await http.GetFromJsonAsync<List<Evaluador>>("api/evaluadores", ct)) ?? new List<Evaluador>();
 
     public async Task<Evaluador?> GetByIdAsync(int evaluadorId, CancellationToken ct = default)
         => await http.GetFromJsonAsync<Evaluador>($"api/evaluadores/{evaluadorId}", ct);

@@ -7,7 +7,7 @@ namespace appEvaluaciones.Services;
 public sealed class ApiCategoriasService(HttpClient http) : ICategoriasService
 {
     public async Task<IReadOnlyList<Categoria>> GetAllAsync(CancellationToken ct = default)
-        => await (http.GetFromJsonAsync<List<Categoria>>("api/categorias", ct) ?? Task.FromResult(new List<Categoria>()));
+        => (await http.GetFromJsonAsync<List<Categoria>>("api/categorias", ct)) ?? new List<Categoria>();
 
     public async Task<Categoria?> GetByIdAsync(int categoriaId, CancellationToken ct = default)
         => await http.GetFromJsonAsync<Categoria>($"api/categorias/{categoriaId}", ct);
