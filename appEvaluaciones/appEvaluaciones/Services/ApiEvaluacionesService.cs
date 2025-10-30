@@ -20,4 +20,10 @@ public sealed class ApiEvaluacionesService(HttpClient http) : IEvaluacionesServi
         var resp = await http.PostAsJsonAsync($"api/evaluaciones/{evaluacionKey}/detalle", payload, ct);
         resp.EnsureSuccessStatusCode();
     }
+
+    public async Task UpsertDetallesAsync(Guid evaluacionKey, IEnumerable<DetalleUpsert> detalles, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync($"api/evaluaciones/{evaluacionKey}/detalles", detalles, ct);
+        resp.EnsureSuccessStatusCode();
+    }
 }

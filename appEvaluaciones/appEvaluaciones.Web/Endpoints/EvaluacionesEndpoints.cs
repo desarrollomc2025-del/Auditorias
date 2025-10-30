@@ -47,6 +47,19 @@ ORDER BY PreguntaId;";
             return Results.NoContent();
         });
 
+        group.MapPost("/{key:guid}/detalles", async (Guid key, List<DetalleDto> detalles, IEvaluacionesService svc, CancellationToken ct) =>
+        {
+            var items = detalles.Select(d => new appEvaluaciones.Shared.Services.DetalleUpsert
+            {
+                PreguntaId = d.PreguntaId,
+                Respuesta = d.Respuesta,
+                Comentario = d.Comentario,
+                Ponderacion = d.Ponderacion
+            });
+            await svc.UpsertDetallesAsync(key, items, ct);
+            return Results.NoContent();
+        });
+
         return group;
     }
 }

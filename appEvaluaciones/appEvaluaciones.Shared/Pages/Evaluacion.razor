@@ -212,12 +212,14 @@ else
                 return;
             }
             await EvaluacionesService.CreateAsync(evaluacionKey, selectedTiendaId);
+            var batch = new List<DetalleUpsert>(preguntas.Count);
             foreach (var p in preguntas)
             {
                 var resp = answers.TryGetValue(p.PreguntaId, out var v) ? v : null;
                 var com = comentarios.TryGetValue(p.PreguntaId, out var c) ? c : null;
-                await EvaluacionesService.UpsertDetalleAsync(evaluacionKey, p.PreguntaId, resp, com, p.Ponderacion);
+                batch.Add(new DetalleUpsert { PreguntaId = p.PreguntaId, Respuesta = resp, Comentario = com, Ponderacion = p.Ponderacion });
             }
+            await EvaluacionesService.UpsertDetallesAsync(evaluacionKey, batch);
         }
         catch (Exception ex)
         {
