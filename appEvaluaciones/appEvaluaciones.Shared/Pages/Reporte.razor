@@ -2,6 +2,8 @@
 @inject IPreguntasService PreguntasService
 @inject IEvidenciasService EvidenciasService
 @inject IEvaluacionesService EvaluacionesService
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
 
 <PageTitle>Reporte Evaluación</PageTitle>
 
@@ -88,5 +90,14 @@ else
             loading = false;
         }
     }
-}
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && error is null)
+        {
+            // Pequeño delay para permitir que las imágenes terminen de cargar
+            await Task.Delay(500);
+            await JS.InvokeVoidAsync("window.print");
+        }
+    }
+}
