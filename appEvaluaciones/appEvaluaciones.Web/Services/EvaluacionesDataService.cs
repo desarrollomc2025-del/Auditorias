@@ -19,7 +19,7 @@ BEGIN
     VALUES(@evaluacionKey, @tiendaId, SYSUTCDATETIME());
     SELECT CAST(SCOPE_IDENTITY() AS INT);
 END";
-        return await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { evaluacionKey, tiendaId }, cancellationToken: ct));
+        return await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { evaluacionKey, tiendaId }, cancellationToken: ct, commandTimeout: 60));
     }
 
     public async Task UpsertDetalleAsync(Guid evaluacionKey, int preguntaId, bool? respuesta, string? comentario, decimal ponderacion, CancellationToken ct = default)
@@ -42,7 +42,6 @@ BEGIN
     INSERT INTO dbo.DetalleEvaluaciones(EvaluacionId, PreguntaId, Respuesta, Comentario, Ponderacion)
     VALUES(@EvalId, @preguntaId, @respuesta, @comentario, @ponderacion);
 END";
-        await db.ExecuteAsync(new CommandDefinition(sql, new { evaluacionKey, preguntaId, respuesta, comentario, ponderacion }, cancellationToken: ct));
+        await db.ExecuteAsync(new CommandDefinition(sql, new { evaluacionKey, preguntaId, respuesta, comentario, ponderacion }, cancellationToken: ct, commandTimeout: 60));
     }
 }
-

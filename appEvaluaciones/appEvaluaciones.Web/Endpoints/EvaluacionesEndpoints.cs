@@ -26,7 +26,7 @@ FROM dbo.DetalleEvaluaciones d
 JOIN dbo.Evaluaciones e ON e.EvaluacionId = d.EvaluacionId
 WHERE e.EvaluacionKey=@key
 ORDER BY PreguntaId;";
-            using var gr = await db.QueryMultipleAsync(new CommandDefinition(sql, new { key }, cancellationToken: ct));
+            using var gr = await db.QueryMultipleAsync(new CommandDefinition(sql, new { key }, cancellationToken: ct, commandTimeout: 60));
             var head = await gr.ReadFirstOrDefaultAsync<(int EvaluacionId, Guid EvaluacionKey, int TiendaId, DateTime FechaCreacion)>();
             if (head.Equals(default((int, Guid, int, DateTime))))
                 return Results.NotFound();

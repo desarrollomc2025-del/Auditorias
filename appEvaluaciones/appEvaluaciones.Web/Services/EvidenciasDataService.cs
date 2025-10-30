@@ -23,7 +23,7 @@ JOIN dbo.DetalleEvaluaciones d ON d.DetalleId = evi.DetalleId
 JOIN dbo.Evaluaciones ev ON ev.EvaluacionId = d.EvaluacionId
 WHERE ev.EvaluacionKey = @evaluacionKey
 ORDER BY evi.EvidenciaId;";
-        var rows = await db.QueryAsync<Evidencia>(new CommandDefinition(sql, new { evaluacionKey }, cancellationToken: ct));
+        var rows = await db.QueryAsync<Evidencia>(new CommandDefinition(sql, new { evaluacionKey }, cancellationToken: ct, commandTimeout: 60));
         return rows.ToList();
     }
 
@@ -45,7 +45,7 @@ INSERT INTO dbo.Evidencias(DetalleId, Descripcion, UrlArchivo, NombreArchivo, Fe
 VALUES(@DetalleId, @comentario, @url, NULL, SYSUTCDATETIME());
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        var id = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { evaluacionKey, preguntaId, comentario, url }, cancellationToken: ct));
+        var id = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { evaluacionKey, preguntaId, comentario, url }, cancellationToken: ct, commandTimeout: 60));
 
         return new Evidencia
         {
@@ -100,7 +100,7 @@ VALUES(@DetalleId, @comentario, @url, @fileName, SYSUTCDATETIME());
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
         var newId = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql,
-            new { evaluacionKey, preguntaId, comentario, url, fileName = safeName }, cancellationToken: ct));
+            new { evaluacionKey, preguntaId, comentario, url, fileName = safeName }, cancellationToken: ct, commandTimeout: 60));
 
         return new Evidencia
         {
