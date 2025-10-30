@@ -20,6 +20,7 @@ builder.Services.AddScoped<IGerentesService, GerentesDataService>();
 builder.Services.AddScoped<ICategoriasService, CategoriasDataService>();
 builder.Services.AddScoped<IPreguntasService, PreguntasDataService>();
 builder.Services.AddScoped<IEvidenciasService, EvidenciasDataService>();
+builder.Services.AddScoped<IEvaluacionesService, EvaluacionesDataService>();
 
 var app = builder.Build();
 
@@ -51,5 +52,8 @@ app.MapGerentes();
 app.MapCategorias();
 app.MapPreguntas();
 app.MapEvidencias();
+app.MapEvaluaciones();
 
 app.Run();
+
+

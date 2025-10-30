@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using appEvaluaciones.Shared.Services;
 using appEvaluaciones.Services;
 using System.Net.Http;
@@ -121,6 +121,13 @@ public static class MauiProgram
             return new ApiEvidenciasService(http);
         });
 
+        // Evaluaciones: online (API)
+        builder.Services.AddSingleton<IEvaluacionesService>(sp =>
+        {
+            var http = sp.GetRequiredService<HttpClient>();
+            return new ApiEvaluacionesService(http);
+        });
+
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
         builder.Logging.AddDebug();
@@ -129,3 +136,5 @@ public static class MauiProgram
         return builder.Build();
     }
 }
+
+

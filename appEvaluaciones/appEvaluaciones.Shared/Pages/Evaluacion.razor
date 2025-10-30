@@ -1,6 +1,8 @@
 @page "/evaluacion"
 @inject IPreguntasService PreguntasService
 @inject IEvidenciasService EvidenciasService
+@inject IEvaluacionesService EvaluacionesService
+@inject ITiendasService TiendasService
 
 <PageTitle>Evaluación</PageTitle>
 
@@ -20,6 +22,26 @@ else
         <div class="d-flex flex-wrap align-items-center gap-3">
             <div><strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)</div>
             <div class="text-muted small">Evaluación: @evaluacionKey</div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label" for="tiendaSel">Tienda a evaluar</label>
+                    <select id="tiendaSel" class="form-select" @bind="selectedTiendaId">
+                        <option value="0">-- Seleccionar tienda --</option>
+                        @foreach (var t in tiendas)
+                        {
+                            <option value="@t.TiendaId">[@t.Codigo] @t.Descripcion</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-success w-100" @onclick="GuardarEvaluacion">Guardar evaluación</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -78,6 +100,8 @@ else
     private bool loading = true;
     private string? error;
     private List<Pregunta> preguntas = new();
+    private List<Tienda> tiendas = new();
+    private int selectedTiendaId = 0;
     private Dictionary<int, bool?> answers = new();
     private Guid evaluacionKey = Guid.Empty;
     private Dictionary<int, string?> comentarios = new();
@@ -95,6 +119,7 @@ else
             error = null;
             var all = await PreguntasService.GetAllAsync();
             preguntas = all.OrderBy(p => p.CategoriaId).ThenBy(p => p.Orden).ThenBy(p => p.PreguntaId).ToList();
+            tiendas = (await TiendasService.GetAllAsync()).OrderBy(t => t.Codigo).ThenBy(t => t.Descripcion).ToList();
             evaluacionKey = Guid.NewGuid();
             answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)null);
             comentarios = preguntas.ToDictionary(p => p.PreguntaId, _ => (string?)null);
@@ -175,5 +200,30 @@ else
             error = ex.Message;
         }
     }
+
+    private async Task GuardarEvaluacion()
+    {
+        try
+        {
+            error = null;
+            if (selectedTiendaId <= 0)
+            {
+                error = "Seleccione la tienda a evaluar.";
+                return;
+            }
+            await EvaluacionesService.CreateAsync(evaluacionKey, selectedTiendaId);
+            foreach (var p in preguntas)
+            {
+                var resp = answers.TryGetValue(p.PreguntaId, out var v) ? v : null;
+                var com = comentarios.TryGetValue(p.PreguntaId, out var c) ? c : null;
+                await EvaluacionesService.UpsertDetalleAsync(evaluacionKey, p.PreguntaId, resp, com, p.Ponderacion);
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
 }
+
 
