@@ -44,7 +44,7 @@ h1:focus {
 
     .blazor-error-boundary::after {
         content: "An error has occurred."
-    }
+}
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
@@ -54,6 +54,56 @@ h1:focus {
     color: var(--bs-secondary-color);
     text-align: end;
 }
+
+/* Domino's brand theme overrides */
+:root {
+    --bs-primary: #006491; /* Domino's Blue */
+    --bs-primary-rgb: 0, 100, 145;
+    --bs-danger: #E31837; /* Domino's Red */
+    --bs-link-color: #006491;
+    --bs-link-hover-color: #004B8D;
+}
+
+/* Links */
+a, .btn-link {
+    color: var(--bs-link-color);
+}
+a:hover {
+    color: var(--bs-link-hover-color);
+}
+
+/* Primary buttons */
+.btn-primary {
+    color: #fff;
+    background-color: var(--bs-primary);
+    border-color: #004B8D;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #004B8D;
+    border-color: #003B6E;
+}
+
+/* Outline primary */
+.btn-outline-primary {
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    color: #fff;
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Focus rings in brand color */
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem rgba(0, 100, 145, 0.35);
+}
+
+/* Validation with brand red */
+.invalid { outline: 1px solid #E31837; }
+.validation-message { color: #E31837; }
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
