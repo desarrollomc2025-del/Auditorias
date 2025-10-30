@@ -22,14 +22,14 @@ BEGIN TRY
         ALTER TABLE dbo.Evaluaciones
         ADD EvaluacionKey UNIQUEIDENTIFIER NULL; -- add as NULLable first to allow backfill
 
-        -- Backfill existing rows
-        UPDATE dbo.Evaluaciones
-        SET EvaluacionKey = NEWID()
-        WHERE EvaluacionKey IS NULL;
+        -- Backfill existing rows (use dynamic SQL to avoid compile-time resolution)
+        EXEC(N'UPDATE dbo.Evaluaciones
+               SET EvaluacionKey = NEWID()
+               WHERE EvaluacionKey IS NULL;');
 
-        -- Make NOT NULL and add unique index
-        ALTER TABLE dbo.Evaluaciones
-        ALTER COLUMN EvaluacionKey UNIQUEIDENTIFIER NOT NULL;
+        -- Make NOT NULL (dynamic SQL avoids compile-time resolution)
+        EXEC(N'ALTER TABLE dbo.Evaluaciones
+               ALTER COLUMN EvaluacionKey UNIQUEIDENTIFIER NOT NULL;');
 
         IF NOT EXISTS (
             SELECT 1 FROM sys.indexes
@@ -77,4 +77,3 @@ BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
     THROW;
 END CATCH
-
