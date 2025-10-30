@@ -1,9 +1,6 @@
 @page "/evaluacion"
 @inject IPreguntasService PreguntasService
-<<<<<<< HEAD
 @inject IEvidenciasService EvidenciasService
-=======
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
 
 <PageTitle>Evaluación</PageTitle>
 
@@ -20,14 +17,10 @@ else if (error is not null)
 else
 {
     <div class="alert alert-info">
-<<<<<<< HEAD
         <div class="d-flex flex-wrap align-items-center gap-3">
             <div><strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)</div>
             <div class="text-muted small">Evaluación: @evaluacionKey</div>
         </div>
-=======
-        <div><strong>Puntaje actual:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)</div>
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
     </div>
 
     <EditForm Model="answers">
@@ -47,18 +40,14 @@ else
                 <div class="mt-2">
                     <label class="form-label">Comentario (opcional)</label>
                     <textarea class="form-control" rows="2" @bind-value="comentarios[q.PreguntaId]" @bind-value:event="oninput"></textarea>
-<<<<<<< HEAD
                     <div class="mt-1">
                         <button class="btn btn-sm btn-outline-primary" type="button" @onclick="() => GuardarComentario(q.PreguntaId)">Guardar comentario</button>
                     </div>
-=======
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
                 </div>
 
                 <div class="mt-2">
                     <label class="form-label">Evidencias (fotos, opcional)</label>
                     <InputFile OnChange="@(e => OnFilesSelected(q.PreguntaId, e))" accept="image/*" multiple />
-<<<<<<< HEAD
                     @if (evidencias.TryGetValue(q.PreguntaId, out var list) && list.Count > 0)
                     {
                         <div class="d-flex flex-wrap gap-2 mt-2">
@@ -70,16 +59,6 @@ else
                                         <img src="@ev.Url" alt="Evidencia" class="img-fluid" style="object-fit:cover;width:100%;height:80px;border-radius:4px;" />
                                     }
                                     <div class="small text-truncate" title="@ev.Comentario">@ev.Comentario</div>
-=======
-                    @if (fotos.TryGetValue(q.PreguntaId, out var list) && list.Count > 0)
-                    {
-                        <div class="d-flex flex-wrap gap-2 mt-2">
-                            @foreach (var img in list)
-                            {
-                                <div class="border rounded p-1" style="width:120px">
-                                    <img src="@img.DataUrl" alt="@img.Name" class="img-fluid" style="object-fit:cover;width:100%;height:80px;border-radius:4px;" />
-                                    <div class="small text-truncate" title="@img.Name">@img.Name</div>
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
                                 </div>
                             }
                         </div>
@@ -100,14 +79,9 @@ else
     private string? error;
     private List<Pregunta> preguntas = new();
     private Dictionary<int, bool?> answers = new();
-<<<<<<< HEAD
     private Guid evaluacionKey = Guid.Empty;
     private Dictionary<int, string?> comentarios = new();
     private Dictionary<int, List<Evidencia>> evidencias = new();
-=======
-    private Dictionary<int, string?> comentarios = new();
-    private Dictionary<int, List<ImagePreview>> fotos = new();
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
 
     private decimal maximo;
     private decimal total;
@@ -121,16 +95,10 @@ else
             error = null;
             var all = await PreguntasService.GetAllAsync();
             preguntas = all.OrderBy(p => p.CategoriaId).ThenBy(p => p.Orden).ThenBy(p => p.PreguntaId).ToList();
-<<<<<<< HEAD
             evaluacionKey = Guid.NewGuid();
             answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)null);
             comentarios = preguntas.ToDictionary(p => p.PreguntaId, _ => (string?)null);
             evidencias = preguntas.ToDictionary(p => p.PreguntaId, _ => new List<Evidencia>());
-=======
-            answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)null);
-            comentarios = preguntas.ToDictionary(p => p.PreguntaId, _ => (string?)null);
-            fotos = preguntas.ToDictionary(p => p.PreguntaId, _ => new List<ImagePreview>());
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
             maximo = preguntas.Sum(p => p.Ponderacion);
             Calcular();
         }
@@ -166,50 +134,28 @@ else
 
     private async Task OnFilesSelected(int preguntaId, InputFileChangeEventArgs e)
     {
-<<<<<<< HEAD
         if (!evidencias.TryGetValue(preguntaId, out var list))
         {
             list = new List<Evidencia>();
             evidencias[preguntaId] = list;
-=======
-        const long maxSize = 5 * 1024 * 1024; // 5 MB por imagen
-        if (!fotos.TryGetValue(preguntaId, out var list))
-        {
-            list = new List<ImagePreview>();
-            fotos[preguntaId] = list;
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
         }
 
         foreach (var file in e.GetMultipleFiles())
         {
             try
             {
-<<<<<<< HEAD
                 var ev = await EvidenciasService.UploadAsync(evaluacionKey, preguntaId, comentarios[preguntaId], file);
                 list.Add(ev);
             }
             catch (Exception ex)
             {
                 error = ex.Message;
-=======
-                using var stream = file.OpenReadStream(maxSize);
-                using var ms = new MemoryStream();
-                await stream.CopyToAsync(ms);
-                var base64 = Convert.ToBase64String(ms.ToArray());
-                var dataUrl = $"data:{file.ContentType};base64,{base64}";
-                list.Add(new ImagePreview { Name = file.Name, DataUrl = dataUrl });
-            }
-            catch
-            {
-                // Ignorar archivos demasiado grandes o errores de lectura por ahora
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
             }
         }
 
         StateHasChanged();
     }
 
-<<<<<<< HEAD
     private async Task GuardarComentario(int preguntaId)
     {
         try
@@ -228,11 +174,6 @@ else
         {
             error = ex.Message;
         }
-=======
-    private sealed class ImagePreview
-    {
-        public string Name { get; set; } = string.Empty;
-        public string DataUrl { get; set; } = string.Empty;
->>>>>>> 26cf0ece041259d3880bc7bc1b2fd2a45d0f33fc
     }
 }
+
