@@ -1,0 +1,92 @@
+@page "/reporte/{key:guid}"
+@inject IPreguntasService PreguntasService
+@inject IEvidenciasService EvidenciasService
+@inject IEvaluacionesService EvaluacionesService
+
+<PageTitle>Reporte Evaluación</PageTitle>
+
+@if (loading)
+{
+    <p>Generando reporte...</p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <div class="container my-3">
+        <h2>Reporte de Evaluación</h2>
+        <div class="text-muted">Evaluación: @key</div>
+        <div class="mt-2">
+            <strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)
+        </div>
+        <hr />
+        @foreach (var d in eval!.Detalles)
+        {
+            var p = preguntasById[d.PreguntaId];
+            <div class="mb-3">
+                <div class="fw-semibold">[@p.Codigo] @p.TextoPregunta</div>
+                <div>Respuesta: <strong>@(d.Respuesta == true ? "Sí" : d.Respuesta == false ? "No" : "N/A")</strong> — Ponderación: @d.Ponderacion.ToString("0.###")</div>
+                @if (!string.IsNullOrWhiteSpace(d.Comentario))
+                {
+                    <div class="mt-1"><em>Comentario:</em> @d.Comentario</div>
+                }
+                @if (evidenciasByPregunta.TryGetValue(d.PreguntaId, out var list) && list.Count > 0)
+                {
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        @foreach (var ev in list)
+                        {
+                            if (!string.IsNullOrWhiteSpace(ev.Url))
+                            {
+                                <img src="@ev.Url" alt="Evidencia" style="object-fit:cover;width:180px;height:120px;border:1px solid #ccc;border-radius:4px;" />
+                            }
+                        }
+                    </div>
+                }
+            </div>
+            <hr />
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid key { get; set; }
+
+    private bool loading = true;
+    private string? error;
+    private EvaluacionVm? eval;
+    private Dictionary<int, Pregunta> preguntasById = new();
+    private Dictionary<int, List<Evidencia>> evidenciasByPregunta = new();
+    private decimal maximo;
+    private decimal total;
+    private decimal porcentaje;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            var preguntas = await PreguntasService.GetAllAsync();
+            preguntasById = preguntas.ToDictionary(p => p.PreguntaId);
+
+            eval = await EvaluacionesService.GetAsync(key);
+            var evs = await EvidenciasService.GetByEvaluacionAsync(key);
+            evidenciasByPregunta = evs.GroupBy(e => e.PreguntaId).ToDictionary(g => g.Key, g => g.ToList());
+
+            maximo = eval.Detalles.Sum(d => d.Ponderacion);
+            total = eval.Detalles.Where(d => d.Respuesta == true).Sum(d => d.Ponderacion);
+            porcentaje = maximo > 0 ? decimal.Round((total / maximo) * 100m, 2) : 0m;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
+

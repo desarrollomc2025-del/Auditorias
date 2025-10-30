@@ -38,8 +38,9 @@ else
                         }
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <button type="button" class="btn btn-success w-100" @onclick="GuardarEvaluacion">Guardar evaluación</button>
+                <div class="col-md-3 d-grid gap-2">
+                    <button type="button" class="btn btn-success" @onclick="GuardarEvaluacion">Guardar evaluación</button>
+                    <button type="button" class="btn btn-outline-primary" @onclick="FinalizarYReporte">Finalizar y PDF</button>
                 </div>
             </div>
         </div>
@@ -110,6 +111,7 @@ else
     private decimal maximo;
     private decimal total;
     private decimal porcentaje;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -220,6 +222,20 @@ else
                 batch.Add(new DetalleUpsert { PreguntaId = p.PreguntaId, Respuesta = resp, Comentario = com, Ponderacion = p.Ponderacion });
             }
             await EvaluacionesService.UpsertDetallesAsync(evaluacionKey, batch);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    private async Task FinalizarYReporte()
+    {
+        try
+        {
+            await GuardarEvaluacion();
+            await EvaluacionesService.FinalizarAsync(evaluacionKey);
+            Navigation.NavigateTo($"/reporte/{evaluacionKey}", forceLoad: true);
         }
         catch (Exception ex)
         {

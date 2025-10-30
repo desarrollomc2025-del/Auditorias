@@ -1,6 +1,7 @@
 
 using System.Net.Http.Json;
 using appEvaluaciones.Shared.Services;
+using appEvaluaciones.Shared.Models;
 
 namespace appEvaluaciones.Services;
 
@@ -25,5 +26,17 @@ public sealed class ApiEvaluacionesService(HttpClient http) : IEvaluacionesServi
     {
         var resp = await http.PostAsJsonAsync($"api/evaluaciones/{evaluacionKey}/detalles", detalles, ct);
         resp.EnsureSuccessStatusCode();
+    }
+
+    public async Task FinalizarAsync(Guid evaluacionKey, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"api/evaluaciones/{evaluacionKey}/finalizar", content: null, ct);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public async Task<EvaluacionVm> GetAsync(Guid evaluacionKey, CancellationToken ct = default)
+    {
+        var vm = await http.GetFromJsonAsync<EvaluacionVm>($"api/evaluaciones/{evaluacionKey}", ct);
+        return vm!;
     }
 }

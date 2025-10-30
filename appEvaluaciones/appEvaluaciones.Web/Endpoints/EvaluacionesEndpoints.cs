@@ -60,6 +60,12 @@ ORDER BY PreguntaId;";
             return Results.NoContent();
         });
 
+        group.MapPost("/{key:guid}/finalizar", async (Guid key, IEvaluacionesService svc, CancellationToken ct) =>
+        {
+            await svc.FinalizarAsync(key, ct);
+            return Results.NoContent();
+        });
+
         return group;
     }
 }

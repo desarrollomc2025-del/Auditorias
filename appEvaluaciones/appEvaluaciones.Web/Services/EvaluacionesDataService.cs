@@ -76,4 +76,38 @@ WHEN NOT MATCHED THEN
         var args = new { evaluacionKey, payload };
         await db.ExecuteAsync(new CommandDefinition(sql, args, cancellationToken: ct, commandTimeout: 120));
     }
+
+    public async Task FinalizarAsync(Guid evaluacionKey, CancellationToken ct = default)
+    {
+        using IDbConnection db = factory.Create();
+        const string sql = @"UPDATE dbo.Evaluaciones
+SET Estado = 'Finalizada', FechaCierre = SYSUTCDATETIME()
+WHERE EvaluacionKey=@evaluacionKey;";
+        await db.ExecuteAsync(new CommandDefinition(sql, new { evaluacionKey }, cancellationToken: ct, commandTimeout: 30));
+    }
+
+    public async Task<appEvaluaciones.Shared.Models.EvaluacionVm> GetAsync(Guid evaluacionKey, CancellationToken ct = default)
+    {
+        using IDbConnection db = factory.Create();
+        const string sql = @"SELECT TOP 1 EvaluacionId, EvaluacionKey, TiendaId, FechaCreacion
+FROM dbo.Evaluaciones WHERE EvaluacionKey=@key;
+SELECT PreguntaId, Respuesta, Comentario, Ponderacion
+FROM dbo.DetalleEvaluaciones d
+JOIN dbo.Evaluaciones e ON e.EvaluacionId = d.EvaluacionId
+WHERE e.EvaluacionKey=@key
+ORDER BY PreguntaId;";
+        using var gr = await db.QueryMultipleAsync(new CommandDefinition(sql, new { key = evaluacionKey }, cancellationToken: ct, commandTimeout: 60));
+        var head = await gr.ReadFirstOrDefaultAsync<(int EvaluacionId, Guid EvaluacionKey, int TiendaId, DateTime FechaCreacion)>();
+        if (head.Equals(default((int, Guid, int, DateTime))))
+            throw new InvalidOperationException("Evaluacion no encontrada");
+        var detalles = (await gr.ReadAsync<appEvaluaciones.Shared.Models.DetalleVm>()).ToList();
+        return new appEvaluaciones.Shared.Models.EvaluacionVm
+        {
+            EvaluacionId = head.EvaluacionId,
+            EvaluacionKey = head.EvaluacionKey,
+            TiendaId = head.TiendaId,
+            FechaCreacion = head.FechaCreacion,
+            Detalles = detalles
+        };
+    }
 }
