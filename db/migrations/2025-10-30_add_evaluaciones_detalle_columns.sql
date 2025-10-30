@@ -47,13 +47,13 @@ BEGIN TRY
         ALTER TABLE dbo.DetalleEvaluaciones
         ADD Respuesta BIT NULL;
 
-        -- Optional backfill from legacy 'Cumple'
+        -- Optional backfill from legacy 'Cumple' (wrap in dynamic SQL)
         IF COL_LENGTH('dbo.DetalleEvaluaciones', 'Cumple') IS NOT NULL
         BEGIN
-            UPDATE d
-            SET d.Respuesta = d.Cumple
-            FROM dbo.DetalleEvaluaciones d
-            WHERE d.Respuesta IS NULL;
+            EXEC(N'UPDATE d
+                   SET d.Respuesta = d.Cumple
+                   FROM dbo.DetalleEvaluaciones d
+                   WHERE d.Respuesta IS NULL;');
         END
     END
 
