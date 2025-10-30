@@ -33,17 +33,17 @@ public static class MauiProgram
 #endif
         builder.Services.AddSingleton(new HttpClient(androidHandler)
         {
-            BaseAddress = new Uri("https://10.0.2.2:7144/")
+            BaseAddress = new Uri("http://10.0.2.2:5098/")
         });
 #elif WINDOWS
         builder.Services.AddSingleton(new HttpClient
         {
-            BaseAddress = new Uri("https://localhost:7144/")
+            BaseAddress = new Uri("http://localhost:5098/")
         });
 #else
         builder.Services.AddSingleton(new HttpClient
         {
-            BaseAddress = new Uri("https://localhost:7144/")
+            BaseAddress = new Uri("http://localhost:5098/")
         });
 #endif
 
