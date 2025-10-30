@@ -1,3 +1,5 @@
+using appEvaluaciones.Shared.Models;
+
 namespace appEvaluaciones.Shared.Services;
 
 public interface IEvaluacionesService
