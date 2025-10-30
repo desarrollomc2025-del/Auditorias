@@ -1,9 +1,6 @@
-using System.Data;
 using System.Text.RegularExpressions;
-using Dapper;
 using appEvaluaciones.Shared.Models;
 using appEvaluaciones.Shared.Services;
-using appEvaluaciones.Web.Services;
 
 namespace appEvaluaciones.Web.Endpoints;
 
@@ -13,30 +10,15 @@ public static class EvidenciasEndpoints
     {
         var group = app.MapGroup("/api/evidencias");
 
-        group.MapGet("/{evaluacionKey:guid}", async (Guid evaluacionKey, ISqlConnectionFactory factory, CancellationToken ct) =>
-        {
-            using IDbConnection db = factory.Create();
-            var rows = await db.QueryAsync<Evidencia>(new CommandDefinition(
-                "SELECT EvidenciaId, EvaluacionKey, PreguntaId, Comentario, Url, FechaCreacion FROM dbo.Evidencias WHERE EvaluacionKey = @evaluacionKey",
-                new { evaluacionKey }, cancellationToken: ct));
-            return Results.Ok(rows);
-        });
+        group.MapGet("/{evaluacionKey:guid}", async (Guid evaluacionKey, IEvidenciasService svc, CancellationToken ct)
+            => Results.Ok(await svc.GetByEvaluacionAsync(evaluacionKey, ct)));
 
         // JSON add (comentario y/o url)
-        group.MapPost("", async (Evidencia ev, ISqlConnectionFactory factory, CancellationToken ct) =>
-        {
-            using IDbConnection db = factory.Create();
-            const string sql = @"INSERT INTO dbo.Evidencias(EvaluacionKey, PreguntaId, Comentario, Url, FechaCreacion)
-VALUES(@EvaluacionKey, @PreguntaId, @Comentario, @Url, SYSUTCDATETIME());
-SELECT CAST(SCOPE_IDENTITY() AS INT);";
-            var id = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, ev, cancellationToken: ct));
-            ev.EvidenciaId = id;
-            ev.FechaCreacion = DateTime.UtcNow;
-            return Results.Ok(ev);
-        });
+        group.MapPost("", async (Evidencia ev, IEvidenciasService svc, CancellationToken ct)
+            => Results.Ok(await svc.AddAsync(ev.EvaluacionKey, ev.PreguntaId, ev.Comentario, ev.Url, ct)));
 
         // File upload (multipart/form-data)
-        group.MapPost("/upload", async (HttpRequest request, IWebHostEnvironment env, ISqlConnectionFactory factory, CancellationToken ct) =>
+        group.MapPost("/upload", async (HttpRequest request, IWebHostEnvironment env, IEvidenciasService svc, CancellationToken ct) =>
         {
             if (!request.HasFormContentType)
                 return Results.BadRequest("Content-Type debe ser multipart/form-data");
@@ -67,24 +49,8 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var url = "/" + Path.Combine(relFolder, fileName).Replace("\\", "/");
 
-            // Insert DB
-            using IDbConnection db = factory.Create();
-            const string sql = @"INSERT INTO dbo.Evidencias(EvaluacionKey, PreguntaId, Comentario, Url, FechaCreacion)
-VALUES(@EvaluacionKey, @PreguntaId, @Comentario, @Url, SYSUTCDATETIME());
-SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-            var ev = new Evidencia
-            {
-                EvaluacionKey = evaluacionKey,
-                PreguntaId = preguntaId,
-                Comentario = string.IsNullOrWhiteSpace(comentario) ? null : comentario,
-                Url = url
-            };
-
-            var id = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, ev, cancellationToken: ct));
-            ev.EvidenciaId = id;
-            ev.FechaCreacion = DateTime.UtcNow;
-
+            // Delegate DB insertion to service (uses correct schema)
+            var ev = await svc.AddAsync(evaluacionKey, preguntaId, string.IsNullOrWhiteSpace(comentario) ? null : comentario, url, ct);
             return Results.Ok(ev);
         });
 
