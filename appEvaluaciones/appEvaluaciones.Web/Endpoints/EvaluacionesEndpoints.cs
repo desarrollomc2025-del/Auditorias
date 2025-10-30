@@ -1,6 +1,6 @@
 using System.Data;
 using Dapper;
-using appEvaluaciones.Web.Services;
+using appEvaluaciones.Shared.Services;
 
 namespace appEvaluaciones.Web.Endpoints;
 
@@ -13,13 +13,13 @@ public static class EvaluacionesEndpoints
     {
         var group = app.MapGroup("/api/evaluaciones");
 
-        group.MapPost("", async (CreateEvaluacionDto dto, EvaluacionesDataService svc, CancellationToken ct) =>
+        group.MapPost("", async (CreateEvaluacionDto dto, IEvaluacionesService svc, CancellationToken ct) =>
         {
             var id = await svc.CreateAsync(dto.EvaluacionKey, dto.TiendaId, ct);
             return Results.Ok(id);
         });
 
-        group.MapPost("/{key:guid}/detalle", async (Guid key, DetalleDto detalle, EvaluacionesDataService svc, CancellationToken ct) =>
+        group.MapPost("/{key:guid}/detalle", async (Guid key, DetalleDto detalle, IEvaluacionesService svc, CancellationToken ct) =>
         {
             await svc.UpsertDetalleAsync(key, detalle.PreguntaId, detalle.Respuesta, detalle.Comentario, detalle.Ponderacion, ct);
             return Results.NoContent();
@@ -28,4 +28,3 @@ public static class EvaluacionesEndpoints
         return group;
     }
 }
-
