@@ -12,29 +12,50 @@ public sealed class EvidenciasDataService(ISqlConnectionFactory factory, IWebHos
     public async Task<IReadOnlyList<Evidencia>> GetByEvaluacionAsync(Guid evaluacionKey, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
-        var rows = await db.QueryAsync<Evidencia>(new CommandDefinition(
-            "SELECT EvidenciaId, EvaluacionKey, PreguntaId, Comentario, Url, FechaCreacion FROM dbo.Evidencias WHERE EvaluacionKey = @evaluacionKey",
-            new { evaluacionKey }, cancellationToken: ct));
+        const string sql = @"SELECT evi.EvidenciaId,
+       ev.EvaluacionKey,
+       d.PreguntaId,
+       evi.Descripcion   AS Comentario,
+       evi.UrlArchivo    AS Url,
+       evi.FechaCreacion
+FROM dbo.Evidencias evi
+JOIN dbo.DetalleEvaluaciones d ON d.DetalleId = evi.DetalleId
+JOIN dbo.Evaluaciones ev ON ev.EvaluacionId = d.EvaluacionId
+WHERE ev.EvaluacionKey = @evaluacionKey
+ORDER BY evi.EvidenciaId;";
+        var rows = await db.QueryAsync<Evidencia>(new CommandDefinition(sql, new { evaluacionKey }, cancellationToken: ct));
         return rows.ToList();
     }
 
     public async Task<Evidencia> AddAsync(Guid evaluacionKey, int preguntaId, string? comentario, string? url = null, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
-        const string sql = @"INSERT INTO dbo.Evidencias(EvaluacionKey, PreguntaId, Comentario, Url, FechaCreacion)
-VALUES(@EvaluacionKey, @PreguntaId, @Comentario, @Url, SYSUTCDATETIME());
+        const string sql = @"DECLARE @EvalId INT = (SELECT EvaluacionId FROM dbo.Evaluaciones WHERE EvaluacionKey=@evaluacionKey);
+IF @EvalId IS NULL THROW 50000, 'Evaluacion no existe', 1;
+
+DECLARE @DetalleId INT = (SELECT DetalleId FROM dbo.DetalleEvaluaciones WHERE EvaluacionId=@EvalId AND PreguntaId=@preguntaId);
+IF @DetalleId IS NULL
+BEGIN
+    INSERT INTO dbo.DetalleEvaluaciones(EvaluacionId, PreguntaId, Respuesta, Comentario, Ponderacion)
+    VALUES(@EvalId, @preguntaId, NULL, @comentario, 0);
+    SET @DetalleId = CAST(SCOPE_IDENTITY() AS INT);
+END
+
+INSERT INTO dbo.Evidencias(DetalleId, Descripcion, UrlArchivo, NombreArchivo, FechaCreacion)
+VALUES(@DetalleId, @comentario, @url, NULL, SYSUTCDATETIME());
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
-        var ev = new Evidencia
+
+        var id = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { evaluacionKey, preguntaId, comentario, url }, cancellationToken: ct));
+
+        return new Evidencia
         {
+            EvidenciaId = id,
             EvaluacionKey = evaluacionKey,
             PreguntaId = preguntaId,
             Comentario = string.IsNullOrWhiteSpace(comentario) ? null : comentario,
-            Url = url
+            Url = url,
+            FechaCreacion = DateTime.UtcNow
         };
-        var id = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, ev, cancellationToken: ct));
-        ev.EvidenciaId = id;
-        ev.FechaCreacion = DateTime.UtcNow;
-        return ev;
     }
 
     public async Task<Evidencia> UploadAsync(Guid evaluacionKey, int preguntaId, string? comentario, IBrowserFile file, CancellationToken ct = default)
@@ -61,7 +82,35 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
         }
 
         var url = "/" + Path.Combine(relFolder, safeName).Replace("\\", "/");
-        return await AddAsync(evaluacionKey, preguntaId, comentario, url, ct);
+
+        using IDbConnection db = factory.Create();
+        const string sql = @"DECLARE @EvalId INT = (SELECT EvaluacionId FROM dbo.Evaluaciones WHERE EvaluacionKey=@evaluacionKey);
+IF @EvalId IS NULL THROW 50000, 'Evaluacion no existe', 1;
+
+DECLARE @DetalleId INT = (SELECT DetalleId FROM dbo.DetalleEvaluaciones WHERE EvaluacionId=@EvalId AND PreguntaId=@preguntaId);
+IF @DetalleId IS NULL
+BEGIN
+    INSERT INTO dbo.DetalleEvaluaciones(EvaluacionId, PreguntaId, Respuesta, Comentario, Ponderacion)
+    VALUES(@EvalId, @preguntaId, NULL, @comentario, 0);
+    SET @DetalleId = CAST(SCOPE_IDENTITY() AS INT);
+END
+
+INSERT INTO dbo.Evidencias(DetalleId, Descripcion, UrlArchivo, NombreArchivo, FechaCreacion)
+VALUES(@DetalleId, @comentario, @url, @fileName, SYSUTCDATETIME());
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+        var newId = await db.ExecuteScalarAsync<int>(new CommandDefinition(sql,
+            new { evaluacionKey, preguntaId, comentario, url, fileName = safeName }, cancellationToken: ct));
+
+        return new Evidencia
+        {
+            EvidenciaId = newId,
+            EvaluacionKey = evaluacionKey,
+            PreguntaId = preguntaId,
+            Comentario = string.IsNullOrWhiteSpace(comentario) ? null : comentario,
+            Url = url,
+            FechaCreacion = DateTime.UtcNow
+        };
     }
 }
 
