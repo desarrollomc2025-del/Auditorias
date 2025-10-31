@@ -123,7 +123,8 @@ else
             preguntas = all.OrderBy(p => p.CategoriaId).ThenBy(p => p.Orden).ThenBy(p => p.PreguntaId).ToList();
             tiendas = (await TiendasService.GetAllAsync()).OrderBy(t => t.Codigo).ThenBy(t => t.Descripcion).ToList();
             evaluacionKey = Guid.NewGuid();
-            answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)null);
+            // Por defecto, marcar todas las preguntas como "Sí"
+            answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)true);
             comentarios = preguntas.ToDictionary(p => p.PreguntaId, _ => (string?)null);
             evidencias = preguntas.ToDictionary(p => p.PreguntaId, _ => new List<Evidencia>());
             maximo = preguntas.Sum(p => p.Ponderacion);
