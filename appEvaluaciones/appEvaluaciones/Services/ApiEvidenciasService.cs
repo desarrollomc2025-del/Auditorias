@@ -9,21 +9,21 @@ namespace appEvaluaciones.Services;
 
 public sealed class ApiEvidenciasService(HttpClient http) : IEvidenciasService
 {
-    public async Task<IReadOnlyList<Evidencia>> GetByEvaluacionAsync(Guid evaluacionKey, CancellationToken ct = default)
-        => await http.GetFromJsonAsync<List<Evidencia>>($"api/evidencias/{evaluacionKey}", ct) ?? new List<Evidencia>();
+    public async Task<IReadOnlyList<Evidencia>> GetByEvaluacionAsync(int evaluacionId, CancellationToken ct = default)
+        => await http.GetFromJsonAsync<List<Evidencia>>($"api/evidencias/{evaluacionId}", ct) ?? new List<Evidencia>();
 
-    public async Task<Evidencia> AddAsync(Guid evaluacionKey, int preguntaId, string? comentario, string? url = null, CancellationToken ct = default)
+    public async Task<Evidencia> AddAsync(int evaluacionId, int preguntaId, string? comentario, string? url = null, CancellationToken ct = default)
     {
-        var payload = new Evidencia { EvaluacionKey = evaluacionKey, PreguntaId = preguntaId, Comentario = comentario, Url = url };
+        var payload = new Evidencia { EvaluacionId = evaluacionId, PreguntaId = preguntaId, Comentario = comentario, Url = url };
         var resp = await http.PostAsJsonAsync("api/evidencias", payload, ct);
         resp.EnsureSuccessStatusCode();
         return (await resp.Content.ReadFromJsonAsync<Evidencia>(cancellationToken: ct))!;
     }
 
-    public async Task<Evidencia> UploadAsync(Guid evaluacionKey, int preguntaId, string? comentario, IBrowserFile file, CancellationToken ct = default)
+    public async Task<Evidencia> UploadAsync(int evaluacionId, int preguntaId, string? comentario, IBrowserFile file, CancellationToken ct = default)
     {
         using var content = new MultipartFormDataContent();
-        content.Add(new StringContent(evaluacionKey.ToString()), "evaluacionKey");
+        content.Add(new StringContent(evaluacionId.ToString()), "evaluacionId");
         content.Add(new StringContent(preguntaId.ToString()), "preguntaId");
         content.Add(new StringContent(comentario ?? string.Empty), "comentario");
 

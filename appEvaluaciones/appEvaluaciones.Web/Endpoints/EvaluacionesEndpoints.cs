@@ -7,47 +7,47 @@ namespace appEvaluaciones.Web.Endpoints;
 
 public static class EvaluacionesEndpoints
 {
-    private sealed record CreateEvaluacionDto(Guid EvaluacionKey, int TiendaId);
+    private sealed record CreateEvaluacionDto(int TiendaId);
     private sealed record DetalleDto(int PreguntaId, bool? Respuesta, string? Comentario, decimal Ponderacion);
     private sealed record DetalleVm(int PreguntaId, bool? Respuesta, string? Comentario, decimal Ponderacion);
-    private sealed record EvaluacionVm(int EvaluacionId, Guid EvaluacionKey, int TiendaId, DateTime FechaCreacion, IReadOnlyList<DetalleVm> Detalles);
+    private sealed record EvaluacionVm(int EvaluacionId, int TiendaId, DateTime FechaCreacion, IReadOnlyList<DetalleVm> Detalles);
 
     public static RouteGroupBuilder MapEvaluaciones(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/evaluaciones");
 
-        group.MapGet("/{key:guid}", async (Guid key, ISqlConnectionFactory factory, CancellationToken ct) =>
+        group.MapGet("/{id:int}", async (int id, ISqlConnectionFactory factory, CancellationToken ct) =>
         {
             using IDbConnection db = factory.Create();
-            const string sql = @"SELECT TOP 1 EvaluacionId, EvaluacionKey, TiendaId, FechaCreacion
-FROM dbo.Evaluaciones WHERE EvaluacionKey=@key;
+            const string sql = @"SELECT TOP 1 EvaluacionId, TiendaId, FechaCreacion
+FROM dbo.Evaluaciones WHERE EvaluacionId=@id;
 SELECT PreguntaId, Respuesta, Comentario, Ponderacion
 FROM dbo.DetalleEvaluaciones d
 JOIN dbo.Evaluaciones e ON e.EvaluacionId = d.EvaluacionId
-WHERE e.EvaluacionKey=@key
+WHERE e.EvaluacionId=@id
 ORDER BY PreguntaId;";
-            using var gr = await db.QueryMultipleAsync(new CommandDefinition(sql, new { key }, cancellationToken: ct, commandTimeout: 60));
-            var head = await gr.ReadFirstOrDefaultAsync<(int EvaluacionId, Guid EvaluacionKey, int TiendaId, DateTime FechaCreacion)>();
-            if (head.Equals(default((int, Guid, int, DateTime))))
+            using var gr = await db.QueryMultipleAsync(new CommandDefinition(sql, new { id }, cancellationToken: ct, commandTimeout: 60));
+            var head = await gr.ReadFirstOrDefaultAsync<(int EvaluacionId, int TiendaId, DateTime FechaCreacion)>();
+            if (head.Equals(default((int, int, DateTime))))
                 return Results.NotFound();
             var detalles = (await gr.ReadAsync<DetalleVm>()).ToList();
-            var vm = new EvaluacionVm(head.EvaluacionId, head.EvaluacionKey, head.TiendaId, head.FechaCreacion, detalles);
+            var vm = new EvaluacionVm(head.EvaluacionId, head.TiendaId, head.FechaCreacion, detalles);
             return Results.Ok(vm);
         });
 
         group.MapPost("", async (CreateEvaluacionDto dto, IEvaluacionesService svc, CancellationToken ct) =>
         {
-            var id = await svc.CreateAsync(dto.EvaluacionKey, dto.TiendaId, ct);
+            var id = await svc.CreateAsync(dto.TiendaId, ct);
             return Results.Ok(id);
         });
 
-        group.MapPost("/{key:guid}/detalle", async (Guid key, DetalleDto detalle, IEvaluacionesService svc, CancellationToken ct) =>
+        group.MapPost("/{id:int}/detalle", async (int id, DetalleDto detalle, IEvaluacionesService svc, CancellationToken ct) =>
         {
-            await svc.UpsertDetalleAsync(key, detalle.PreguntaId, detalle.Respuesta, detalle.Comentario, detalle.Ponderacion, ct);
+            await svc.UpsertDetalleAsync(id, detalle.PreguntaId, detalle.Respuesta, detalle.Comentario, detalle.Ponderacion, ct);
             return Results.NoContent();
         });
 
-        group.MapPost("/{key:guid}/detalles", async (Guid key, List<DetalleDto> detalles, IEvaluacionesService svc, CancellationToken ct) =>
+        group.MapPost("/{id:int}/detalles", async (int id, List<DetalleDto> detalles, IEvaluacionesService svc, CancellationToken ct) =>
         {
             var items = detalles.Select(d => new appEvaluaciones.Shared.Services.DetalleUpsert
             {
@@ -56,13 +56,13 @@ ORDER BY PreguntaId;";
                 Comentario = d.Comentario,
                 Ponderacion = d.Ponderacion
             });
-            await svc.UpsertDetallesAsync(key, items, ct);
+            await svc.UpsertDetallesAsync(id, items, ct);
             return Results.NoContent();
         });
 
-        group.MapPost("/{key:guid}/finalizar", async (Guid key, IEvaluacionesService svc, CancellationToken ct) =>
+        group.MapPost("/{id:int}/finalizar", async (int id, IEvaluacionesService svc, CancellationToken ct) =>
         {
-            await svc.FinalizarAsync(key, ct);
+            await svc.FinalizarAsync(id, ct);
             return Results.NoContent();
         });
 

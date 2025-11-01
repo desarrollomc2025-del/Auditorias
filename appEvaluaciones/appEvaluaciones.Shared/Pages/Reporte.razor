@@ -1,4 +1,4 @@
-@page "/reporte/{key:guid}"
+@page "/reporte/{id:int}"
 @inject IPreguntasService PreguntasService
 @inject IEvidenciasService EvidenciasService
 @inject IEvaluacionesService EvaluacionesService
@@ -20,7 +20,7 @@ else
 {
     <div class="container my-3">
         <h2>Reporte de Evaluación</h2>
-        <div class="text-muted">Evaluación: @key</div>
+        <div class="text-muted">Evaluación: @id</div>
         <div class="mt-2">
             <strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)
         </div>
@@ -54,7 +54,7 @@ else
 }
 
 @code {
-    [Parameter] public Guid key { get; set; }
+    [Parameter] public int id { get; set; }
 
     private bool loading = true;
     private string? error;
@@ -74,8 +74,8 @@ else
             var preguntas = await PreguntasService.GetAllAsync();
             preguntasById = preguntas.ToDictionary(p => p.PreguntaId);
 
-            eval = await EvaluacionesService.GetAsync(key);
-            var evs = await EvidenciasService.GetByEvaluacionAsync(key);
+            eval = await EvaluacionesService.GetAsync(id);
+            var evs = await EvidenciasService.GetByEvaluacionAsync(id);
             evidenciasByPregunta = evs.GroupBy(e => e.PreguntaId).ToDictionary(g => g.Key, g => g.ToList());
 
             maximo = eval.Detalles.Sum(d => d.Ponderacion);
@@ -102,3 +102,4 @@ else
         }
     }
 }
+

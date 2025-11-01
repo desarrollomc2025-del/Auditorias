@@ -10,12 +10,12 @@ public static class EvidenciasEndpoints
     {
         var group = app.MapGroup("/api/evidencias");
 
-        group.MapGet("/{evaluacionKey:guid}", async (Guid evaluacionKey, IEvidenciasService svc, CancellationToken ct)
-            => Results.Ok(await svc.GetByEvaluacionAsync(evaluacionKey, ct)));
+        group.MapGet("/{evaluacionId:int}", async (int evaluacionId, IEvidenciasService svc, CancellationToken ct)
+            => Results.Ok(await svc.GetByEvaluacionAsync(evaluacionId, ct)));
 
         // JSON add (comentario y/o url)
         group.MapPost("", async (Evidencia ev, IEvidenciasService svc, CancellationToken ct)
-            => Results.Ok(await svc.AddAsync(ev.EvaluacionKey, ev.PreguntaId, ev.Comentario, ev.Url, ct)));
+            => Results.Ok(await svc.AddAsync(ev.EvaluacionId, ev.PreguntaId, ev.Comentario, ev.Url, ct)));
 
         // File upload (multipart/form-data)
         group.MapPost("/upload", async (HttpRequest request, IWebHostEnvironment env, IEvidenciasService svc, CancellationToken ct) =>
@@ -24,8 +24,8 @@ public static class EvidenciasEndpoints
                 return Results.BadRequest("Content-Type debe ser multipart/form-data");
 
             var form = await request.ReadFormAsync(ct);
-            if (!Guid.TryParse(form["evaluacionKey"], out var evaluacionKey))
-                return Results.BadRequest("evaluacionKey inválido");
+            if (!int.TryParse(form["evaluacionId"], out var evaluacionId))
+                return Results.BadRequest("evaluacionId inválido");
 
             if (!int.TryParse(form["preguntaId"], out var preguntaId))
                 return Results.BadRequest("preguntaId inválido");
@@ -37,7 +37,7 @@ public static class EvidenciasEndpoints
 
             // Sanitize filename
             var fileName = Regex.Replace(Path.GetFileName(file.FileName), "[^A-Za-z0-9_.-]", "_");
-            var relFolder = Path.Combine("evidencias", evaluacionKey.ToString());
+            var relFolder = Path.Combine("evidencias", evaluacionId.ToString());
             var absFolder = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), relFolder);
             Directory.CreateDirectory(absFolder);
 
@@ -50,7 +50,7 @@ public static class EvidenciasEndpoints
             var url = "/" + Path.Combine(relFolder, fileName).Replace("\\", "/");
 
             // Delegate DB insertion to service (uses correct schema)
-            var ev = await svc.AddAsync(evaluacionKey, preguntaId, string.IsNullOrWhiteSpace(comentario) ? null : comentario, url, ct);
+            var ev = await svc.AddAsync(evaluacionId, preguntaId, string.IsNullOrWhiteSpace(comentario) ? null : comentario, url, ct);
             return Results.Ok(ev);
         });
 

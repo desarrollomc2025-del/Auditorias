@@ -6,51 +6,42 @@ namespace appEvaluaciones.Web.Services;
 
 public sealed class EvaluacionesDataService(ISqlConnectionFactory factory) : IEvaluacionesService
 {
-    public async Task<int> CreateAsync(Guid evaluacionKey, int tiendaId, CancellationToken ct = default)
+    public async Task<int> CreateAsync(int tiendaId, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
-        const string sql = @"IF EXISTS(SELECT 1 FROM dbo.Evaluaciones WHERE EvaluacionKey=@evaluacionKey)
-BEGIN
-    SELECT EvaluacionId FROM dbo.Evaluaciones WHERE EvaluacionKey=@evaluacionKey;
-END
-ELSE
-BEGIN
-    INSERT INTO dbo.Evaluaciones(EvaluacionKey, TiendaId, FechaCreacion)
-    VALUES(@evaluacionKey, @tiendaId, SYSUTCDATETIME());
-    SELECT CAST(SCOPE_IDENTITY() AS INT);
-END";
-        return await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { evaluacionKey, tiendaId }, cancellationToken: ct, commandTimeout: 60));
+        const string sql = @"INSERT INTO dbo.Evaluaciones(TiendaId, FechaCreacion)
+VALUES(@tiendaId, SYSUTCDATETIME());
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+        return await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { tiendaId }, cancellationToken: ct, commandTimeout: 60));
     }
 
-    public async Task UpsertDetalleAsync(Guid evaluacionKey, int preguntaId, bool? respuesta, string? comentario, decimal ponderacion, CancellationToken ct = default)
+    public async Task UpsertDetalleAsync(int evaluacionId, int preguntaId, bool? respuesta, string? comentario, decimal ponderacion, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
-        const string sql = @"DECLARE @EvalId INT = (SELECT EvaluacionId FROM dbo.Evaluaciones WHERE EvaluacionKey=@evaluacionKey);
-IF @EvalId IS NULL
+        const string sql = @"IF NOT EXISTS(SELECT 1 FROM dbo.Evaluaciones WHERE EvaluacionId=@evaluacionId)
 BEGIN
     THROW 50000, 'Evaluacion no existe', 1;
 END
 
-IF EXISTS(SELECT 1 FROM dbo.DetalleEvaluaciones WHERE EvaluacionId=@EvalId AND PreguntaId=@preguntaId)
+IF EXISTS(SELECT 1 FROM dbo.DetalleEvaluaciones WHERE EvaluacionId=@evaluacionId AND PreguntaId=@preguntaId)
 BEGIN
     UPDATE dbo.DetalleEvaluaciones
     SET Respuesta=@respuesta, Comentario=@comentario, Ponderacion=@ponderacion
-    WHERE EvaluacionId=@EvalId AND PreguntaId=@preguntaId;
+    WHERE EvaluacionId=@evaluacionId AND PreguntaId=@preguntaId;
 END
 ELSE
 BEGIN
     INSERT INTO dbo.DetalleEvaluaciones(EvaluacionId, PreguntaId, Respuesta, Comentario, Ponderacion)
-    VALUES(@EvalId, @preguntaId, @respuesta, @comentario, @ponderacion);
+    VALUES(@evaluacionId, @preguntaId, @respuesta, @comentario, @ponderacion);
 END";
-        await db.ExecuteAsync(new CommandDefinition(sql, new { evaluacionKey, preguntaId, respuesta, comentario, ponderacion }, cancellationToken: ct, commandTimeout: 60));
+        await db.ExecuteAsync(new CommandDefinition(sql, new { evaluacionId, preguntaId, respuesta, comentario, ponderacion }, cancellationToken: ct, commandTimeout: 60));
     }
 
-    public async Task UpsertDetallesAsync(Guid evaluacionKey, IEnumerable<DetalleUpsert> detalles, CancellationToken ct = default)
+    public async Task UpsertDetallesAsync(int evaluacionId, IEnumerable<DetalleUpsert> detalles, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
         const string sql = @"SET XACT_ABORT ON;
-DECLARE @EvalId INT = (SELECT EvaluacionId FROM dbo.Evaluaciones WHERE EvaluacionKey=@evaluacionKey);
-IF @EvalId IS NULL THROW 50000, 'Evaluacion no existe', 1;
+IF NOT EXISTS(SELECT 1 FROM dbo.Evaluaciones WHERE EvaluacionId=@evaluacionId) THROW 50000, 'Evaluacion no existe', 1;
 
 DECLARE @json NVARCHAR(MAX) = @payload;
 
@@ -65,46 +56,45 @@ DECLARE @json NVARCHAR(MAX) = @payload;
 )
 MERGE dbo.DetalleEvaluaciones AS d
 USING src AS s
-ON d.EvaluacionId = @EvalId AND d.PreguntaId = s.PreguntaId
+ON d.EvaluacionId = @evaluacionId AND d.PreguntaId = s.PreguntaId
 WHEN MATCHED THEN
     UPDATE SET Respuesta = s.Respuesta, Comentario = s.Comentario, Ponderacion = s.Ponderacion
 WHEN NOT MATCHED THEN
     INSERT (EvaluacionId, PreguntaId, Respuesta, Comentario, Ponderacion)
-    VALUES (@EvalId, s.PreguntaId, s.Respuesta, s.Comentario, s.Ponderacion);";
+    VALUES (@evaluacionId, s.PreguntaId, s.Respuesta, s.Comentario, s.Ponderacion);";
 
         var payload = System.Text.Json.JsonSerializer.Serialize(detalles);
-        var args = new { evaluacionKey, payload };
+        var args = new { evaluacionId, payload };
         await db.ExecuteAsync(new CommandDefinition(sql, args, cancellationToken: ct, commandTimeout: 120));
     }
 
-    public async Task FinalizarAsync(Guid evaluacionKey, CancellationToken ct = default)
+    public async Task FinalizarAsync(int evaluacionId, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
         const string sql = @"UPDATE dbo.Evaluaciones
 SET Estado = 'Finalizada', FechaCierre = SYSUTCDATETIME()
-WHERE EvaluacionKey=@evaluacionKey;";
-        await db.ExecuteAsync(new CommandDefinition(sql, new { evaluacionKey }, cancellationToken: ct, commandTimeout: 30));
+WHERE EvaluacionId=@evaluacionId;";
+        await db.ExecuteAsync(new CommandDefinition(sql, new { evaluacionId }, cancellationToken: ct, commandTimeout: 30));
     }
 
-    public async Task<appEvaluaciones.Shared.Models.EvaluacionVm> GetAsync(Guid evaluacionKey, CancellationToken ct = default)
+    public async Task<appEvaluaciones.Shared.Models.EvaluacionVm> GetAsync(int evaluacionId, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
-        const string sql = @"SELECT TOP 1 EvaluacionId, EvaluacionKey, TiendaId, FechaCreacion
-FROM dbo.Evaluaciones WHERE EvaluacionKey=@key;
+        const string sql = @"SELECT TOP 1 EvaluacionId, TiendaId, FechaCreacion
+FROM dbo.Evaluaciones WHERE EvaluacionId=@id;
 SELECT PreguntaId, Respuesta, Comentario, Ponderacion
 FROM dbo.DetalleEvaluaciones d
 JOIN dbo.Evaluaciones e ON e.EvaluacionId = d.EvaluacionId
-WHERE e.EvaluacionKey=@key
+WHERE e.EvaluacionId=@id
 ORDER BY PreguntaId;";
-        using var gr = await db.QueryMultipleAsync(new CommandDefinition(sql, new { key = evaluacionKey }, cancellationToken: ct, commandTimeout: 60));
-        var head = await gr.ReadFirstOrDefaultAsync<(int EvaluacionId, Guid EvaluacionKey, int TiendaId, DateTime FechaCreacion)>();
-        if (head.Equals(default((int, Guid, int, DateTime))))
+        using var gr = await db.QueryMultipleAsync(new CommandDefinition(sql, new { id = evaluacionId }, cancellationToken: ct, commandTimeout: 60));
+        var head = await gr.ReadFirstOrDefaultAsync<(int EvaluacionId, int TiendaId, DateTime FechaCreacion)>();
+        if (head.Equals(default((int, int, DateTime))))
             throw new InvalidOperationException("Evaluacion no encontrada");
         var detalles = (await gr.ReadAsync<appEvaluaciones.Shared.Models.DetalleVm>()).ToList();
         return new appEvaluaciones.Shared.Models.EvaluacionVm
         {
             EvaluacionId = head.EvaluacionId,
-            EvaluacionKey = head.EvaluacionKey,
             TiendaId = head.TiendaId,
             FechaCreacion = head.FechaCreacion,
             Detalles = detalles

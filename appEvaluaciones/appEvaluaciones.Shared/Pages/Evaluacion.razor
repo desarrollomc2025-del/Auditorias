@@ -21,7 +21,7 @@ else
     <div class="alert alert-info">
         <div class="d-flex flex-wrap align-items-center gap-3">
             <div><strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)</div>
-            <div class="text-muted small">Evaluación: @evaluacionKey</div>
+            <div class="text-muted small">Evaluación: @evaluacionId</div>
         </div>
     </div>
 
@@ -104,7 +104,7 @@ else
     private List<Tienda> tiendas = new();
     private int selectedTiendaId = 0;
     private Dictionary<int, bool?> answers = new();
-    private Guid evaluacionKey = Guid.Empty;
+    private int evaluacionId = 0;
     private Dictionary<int, string?> comentarios = new();
     private Dictionary<int, List<Evidencia>> evidencias = new();
 
@@ -122,7 +122,7 @@ else
             var all = await PreguntasService.GetAllAsync();
             preguntas = all.OrderBy(p => p.CategoriaId).ThenBy(p => p.Orden).ThenBy(p => p.PreguntaId).ToList();
             tiendas = (await TiendasService.GetAllAsync()).OrderBy(t => t.Codigo).ThenBy(t => t.Descripcion).ToList();
-            evaluacionKey = Guid.NewGuid();
+            // La evaluación se creará en la primera acción que requiera ID
             // Por defecto, marcar todas las preguntas como "Sí"
             answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)true);
             comentarios = preguntas.ToDictionary(p => p.PreguntaId, _ => (string?)null);
@@ -172,7 +172,12 @@ else
         {
             try
             {
-                var ev = await EvidenciasService.UploadAsync(evaluacionKey, preguntaId, comentarios[preguntaId], file);
+                if (evaluacionId <= 0)
+                {
+                    if (selectedTiendaId <= 0) { error = "Seleccione la tienda antes de subir evidencias."; break; }
+                    evaluacionId = await EvaluacionesService.CreateAsync(selectedTiendaId);
+                }
+                var ev = await EvidenciasService.UploadAsync(evaluacionId, preguntaId, comentarios[preguntaId], file);
                 list.Add(ev);
             }
             catch (Exception ex)
@@ -190,7 +195,12 @@ else
         {
             var c = comentarios.TryGetValue(preguntaId, out var txt) ? txt : null;
             if (string.IsNullOrWhiteSpace(c)) return;
-            var ev = await EvidenciasService.AddAsync(evaluacionKey, preguntaId, c);
+            if (evaluacionId <= 0)
+            {
+                if (selectedTiendaId <= 0) { error = "Seleccione la tienda antes de guardar comentario."; return; }
+                evaluacionId = await EvaluacionesService.CreateAsync(selectedTiendaId);
+            }
+            var ev = await EvidenciasService.AddAsync(evaluacionId, preguntaId, c);
             if (!evidencias.TryGetValue(preguntaId, out var list))
             {
                 list = new List<Evidencia>();
@@ -214,7 +224,10 @@ else
                 error = "Seleccione la tienda a evaluar.";
                 return;
             }
-            await EvaluacionesService.CreateAsync(evaluacionKey, selectedTiendaId);
+            if (evaluacionId <= 0)
+            {
+                evaluacionId = await EvaluacionesService.CreateAsync(selectedTiendaId);
+            }
             var batch = new List<DetalleUpsert>(preguntas.Count);
             foreach (var p in preguntas)
             {
@@ -222,7 +235,7 @@ else
                 var com = comentarios.TryGetValue(p.PreguntaId, out var c) ? c : null;
                 batch.Add(new DetalleUpsert { PreguntaId = p.PreguntaId, Respuesta = resp, Comentario = com, Ponderacion = p.Ponderacion });
             }
-            await EvaluacionesService.UpsertDetallesAsync(evaluacionKey, batch);
+            await EvaluacionesService.UpsertDetallesAsync(evaluacionId, batch);
         }
         catch (Exception ex)
         {
@@ -235,8 +248,8 @@ else
         try
         {
             await GuardarEvaluacion();
-            await EvaluacionesService.FinalizarAsync(evaluacionKey);
-            Navigation.NavigateTo($"/reporte/{evaluacionKey}", forceLoad: true);
+            await EvaluacionesService.FinalizarAsync(evaluacionId);
+            Navigation.NavigateTo($"/reporte/{evaluacionId}", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -244,5 +257,6 @@ else
         }
     }
 }
+
 
 

@@ -11,9 +11,7 @@ public sealed class DetalleVm
 public sealed class EvaluacionVm
 {
     public int EvaluacionId { get; set; }
-    public Guid EvaluacionKey { get; set; }
     public int TiendaId { get; set; }
     public DateTime FechaCreacion { get; set; }
     public List<DetalleVm> Detalles { get; set; } = new();
 }
-

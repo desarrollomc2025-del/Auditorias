@@ -32,3 +32,9 @@ appEvaluaciones/appEvaluaciones.Shared/bin/
 
 # Logs
 *.log
+
+# Runtime uploads (evidence files)
+appEvaluaciones/appEvaluaciones.Web/wwwroot/evidencias/
+
+# Local temp scripts
+TEMP_*.ps1
