@@ -6,13 +6,13 @@ namespace appEvaluaciones.Web.Services;
 
 public sealed class EvaluacionesDataService(ISqlConnectionFactory factory) : IEvaluacionesService
 {
-    public async Task<int> CreateAsync(int tiendaId, CancellationToken ct = default)
+    public async Task<int> CreateAsync(int tiendaId, int? evaluadorId, CancellationToken ct = default)
     {
         using IDbConnection db = factory.Create();
-        const string sql = @"INSERT INTO dbo.Evaluaciones(TiendaId, FechaCreacion)
-VALUES(@tiendaId, SYSUTCDATETIME());
+        const string sql = @"INSERT INTO dbo.Evaluaciones(TiendaId, EvaluadorId, FechaCreacion)
+VALUES(@tiendaId, @evaluadorId, SYSUTCDATETIME());
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
-        return await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { tiendaId }, cancellationToken: ct, commandTimeout: 60));
+        return await db.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { tiendaId, evaluadorId }, cancellationToken: ct, commandTimeout: 60));
     }
 
     public async Task UpsertDetalleAsync(int evaluacionId, int preguntaId, bool? respuesta, string? comentario, decimal ponderacion, CancellationToken ct = default)

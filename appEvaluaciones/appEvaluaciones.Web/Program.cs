@@ -2,6 +2,10 @@ using appEvaluaciones.Web.Components;
 using appEvaluaciones.Shared.Services;
 using appEvaluaciones.Web.Services;
 using appEvaluaciones.Web.Endpoints;
+using appEvaluaciones.Web.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +38,8 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found");
 
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -44,16 +50,46 @@ app.MapRazorComponents<App>()
         typeof(appEvaluaciones.Shared._Imports).Assembly);
 
 // Minimal APIs
-app.MapTiendas();
-app.MapEmpresas();
-app.MapTiposTienda();
-app.MapEvaluadores();
-app.MapGerentes();
-app.MapCategorias();
-app.MapPreguntas();
-app.MapEvidencias();
-app.MapEvaluaciones();
+app.MapAuth();
+app.MapTiendas().RequireAuthorization("Admin");
+app.MapEmpresas().RequireAuthorization("Admin");
+app.MapTiposTienda().RequireAuthorization("Admin");
+app.MapEvaluadores().RequireAuthorization("Admin");
+app.MapGerentes().RequireAuthorization("Admin");
+app.MapCategorias().RequireAuthorization("Admin");
+app.MapPreguntas().RequireAuthorization("Evaluador");
+app.MapEvidencias().RequireAuthorization("Evaluador");
+app.MapEvaluaciones().RequireAuthorization("Evaluador");
 
 app.Run();
 
 
+// Configure JWT
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
+if (jwtSection is null || string.IsNullOrWhiteSpace(jwtSection.Key))
+{
+    // Provide a fallback dev key to avoid misconfig at dev time
+    jwtSection = new JwtOptions { Issuer = "appEvaluaciones", Audience = "appEvaluaciones", Key = "dev-secret-key-change-me-please-1234567890" };
+}
+var key = Encoding.UTF8.GetBytes(jwtSection.Key);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection.Issuer,
+            ValidAudience = jwtSection.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Evaluador", p => p.RequireRole("Evaluador", "Admin"));
+    options.AddPolicy("Admin", p => p.RequireRole("Admin"));
+});
+app.MapUsuarios().RequireAuthorization("Admin");

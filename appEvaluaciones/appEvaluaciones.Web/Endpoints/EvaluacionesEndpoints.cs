@@ -35,9 +35,12 @@ ORDER BY PreguntaId;";
             return Results.Ok(vm);
         });
 
-        group.MapPost("", async (CreateEvaluacionDto dto, IEvaluacionesService svc, CancellationToken ct) =>
+        group.MapPost("", async (CreateEvaluacionDto dto, IEvaluacionesService svc, HttpContext http, CancellationToken ct) =>
         {
-            var id = await svc.CreateAsync(dto.TiendaId, ct);
+            int? evaluadorId = null;
+            var evalidClaim = http.User.Claims.FirstOrDefault(c => c.Type == "evalid")?.Value;
+            if (int.TryParse(evalidClaim, out var parsed)) evaluadorId = parsed;
+            var id = await svc.CreateAsync(dto.TiendaId, evaluadorId, ct);
             return Results.Ok(id);
         });
 

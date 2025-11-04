@@ -7,7 +7,7 @@ namespace appEvaluaciones.Services;
 
 public sealed class ApiEvaluacionesService(HttpClient http) : IEvaluacionesService
 {
-    public async Task<int> CreateAsync(int tiendaId, CancellationToken ct = default)
+    public async Task<int> CreateAsync(int tiendaId, int? evaluadorId = null, CancellationToken ct = default)
     {
         var payload = new { TiendaId = tiendaId };
         var resp = await http.PostAsJsonAsync("api/evaluaciones", payload, ct);
