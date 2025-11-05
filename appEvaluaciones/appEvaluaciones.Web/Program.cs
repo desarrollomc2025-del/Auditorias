@@ -26,6 +26,35 @@ builder.Services.AddScoped<IPreguntasService, PreguntasDataService>();
 builder.Services.AddScoped<IEvidenciasService, EvidenciasDataService>();
 builder.Services.AddScoped<IEvaluacionesService, EvaluacionesDataService>();
 
+// Configure JWT (must be before Build())
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
+if (jwtSection is null || string.IsNullOrWhiteSpace(jwtSection.Key))
+{
+    // Provide a fallback dev key to avoid misconfig at dev time
+    jwtSection = new JwtOptions { Issuer = "appEvaluaciones", Audience = "appEvaluaciones", Key = "dev-secret-key-change-me-please-1234567890" };
+}
+var key = Encoding.UTF8.GetBytes(jwtSection.Key);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection.Issuer,
+            ValidAudience = jwtSection.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Evaluador", p => p.RequireRole("Evaluador", "Admin"));
+    options.AddPolicy("Admin", p => p.RequireRole("Admin"));
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -60,36 +89,6 @@ app.MapCategorias().RequireAuthorization("Admin");
 app.MapPreguntas().RequireAuthorization("Evaluador");
 app.MapEvidencias().RequireAuthorization("Evaluador");
 app.MapEvaluaciones().RequireAuthorization("Evaluador");
+app.MapUsuarios().RequireAuthorization("Admin");
 
 app.Run();
-
-
-// Configure JWT
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
-if (jwtSection is null || string.IsNullOrWhiteSpace(jwtSection.Key))
-{
-    // Provide a fallback dev key to avoid misconfig at dev time
-    jwtSection = new JwtOptions { Issuer = "appEvaluaciones", Audience = "appEvaluaciones", Key = "dev-secret-key-change-me-please-1234567890" };
-}
-var key = Encoding.UTF8.GetBytes(jwtSection.Key);
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSection.Issuer,
-            ValidAudience = jwtSection.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(key)
-        };
-    });
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Evaluador", p => p.RequireRole("Evaluador", "Admin"));
-    options.AddPolicy("Admin", p => p.RequireRole("Admin"));
-});
-app.MapUsuarios().RequireAuthorization("Admin");

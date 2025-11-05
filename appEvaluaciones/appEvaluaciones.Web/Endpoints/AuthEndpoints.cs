@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Dapper;
 using appEvaluaciones.Web.Auth;
+using Microsoft.AspNetCore.Mvc;
 
 namespace appEvaluaciones.Web.Endpoints;
 
@@ -15,7 +16,7 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/api/auth");
 
-        group.MapPost("/login", async (LoginDto dto, IJwtTokenService jwt, appEvaluaciones.Web.Services.ISqlConnectionFactory factory, CancellationToken ct) =>
+        group.MapPost("/login", async ([FromBody] LoginDto dto, [FromServices] IJwtTokenService jwt, [FromServices] appEvaluaciones.Web.Services.ISqlConnectionFactory factory, CancellationToken ct) =>
         {
             using IDbConnection db = factory.Create();
             const string sql = @"SELECT TOP 1 UsuarioId, Usuario as Username, PasswordHash, Rol, EvaluadorId
