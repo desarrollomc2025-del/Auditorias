@@ -25,7 +25,7 @@ builder.Services.AddScoped<ICategoriasService, CategoriasDataService>();
 builder.Services.AddScoped<IPreguntasService, PreguntasDataService>();
 builder.Services.AddScoped<IEvidenciasService, EvidenciasDataService>();
 builder.Services.AddScoped<IEvaluacionesService, EvaluacionesDataService>();
-builder.Services.AddScoped<IAuthService, Web.Services.WebAuthService>();
+builder.Services.AddScoped<IAuthService, WebAuthService>();
 
 // Configure JWT (must be before Build())
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
