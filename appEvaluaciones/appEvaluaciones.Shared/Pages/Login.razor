@@ -1,8 +1,9 @@
 @page "/login"
+@inject NavigationManager Nav
 
 <h3>Iniciar sesión</h3>
 
-@if (Context.Request.Query.ContainsKey("e"))
+@if (hasError)
 {
     <div class="alert alert-danger">Usuario o contraseña inválidos</div>
 }
@@ -18,3 +19,9 @@
     </div>
     <button type="submit" class="btn btn-primary">Entrar</button>
 </form>
+
+@code {
+    private bool hasError => Microsoft.AspNetCore.WebUtilities.QueryHelpers
+        .ParseQuery(new Uri(Nav.Uri).Query)
+        .ContainsKey("e");
+}
