@@ -59,7 +59,7 @@ else
 }
 
 @code {
-    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, "Admin", System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo("/login", true); return; } }
     private List<Pregunta> items = new();
     private List<Categoria> categorias = new();
     private bool loading = true;
