@@ -25,7 +25,8 @@ builder.Services.AddScoped<ICategoriasService, CategoriasDataService>();
 builder.Services.AddScoped<IPreguntasService, PreguntasDataService>();
 builder.Services.AddScoped<IEvidenciasService, EvidenciasDataService>();
 builder.Services.AddScoped<IEvaluacionesService, EvaluacionesDataService>();
-builder.Services.AddScoped<IAuthService, WebAuthService>();
+// Note: Singleton simplifies demo state across renders; for production, integrate proper auth with cookies/JWT
+builder.Services.AddSingleton<IAuthService, WebAuthService>();
 
 // Configure JWT (must be before Build())
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
