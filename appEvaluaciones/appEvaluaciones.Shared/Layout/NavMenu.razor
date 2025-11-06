@@ -1,64 +1,91 @@
-﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth\n@inject NavigationManager Nav\n\n<div class="top-row ps-3 navbar navbar-dark">\n    <div class="container-fluid d-flex justify-content-between align-items-center">\n        <a class="navbar-brand" href="">appEvaluaciones</a>\n        <div class="text-end">\n            @if (Auth.Current.IsAuthenticated)\n            {\n                <span class="me-2 small">@($"Usuario: {Auth.Current.Username} ({Auth.Current.Role})")</span>\n                <button class="btn btn-sm btn-outline-light" @onclick="OnLogout">Salir</button>\n            }\n            else\n            {\n                <NavLink class="btn btn-sm btn-outline-light" href="login">Login</NavLink>\n            }\n        </div>\n    </div>\n    </div>
+@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a class="navbar-brand" href="">appEvaluaciones</a>
+        <div class="text-end">
+            @if (Auth.Current.IsAuthenticated)
+            {
+                <span class="me-2 small">@($"Usuario: {Auth.Current.Username} ({Auth.Current.Role})")</span>
+                <button class="btn btn-sm btn-outline-light" @onclick="OnLogout">Salir</button>
+            }
+            else
+            {
+                <NavLink class="btn btn-sm btn-outline-light" href="login">Login</NavLink>
+            }
+        </div>
+    </div>
+</div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">\n        @if (Auth.Current.IsAuthenticated)\n        {
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3 mt-2">
-            <NavLink class="nav-link" href="evaluacion">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Evaluación
-            </NavLink>
-        </div>
-
-        <!-- MenÃº CatÃ¡logos con sub-items -->
-        <div class="nav-item px-3 mt-3">
-            <button class="nav-link btn btn-link text-decoration-none px-0" @onclick:stopPropagation="true" @onclick="ToggleCatalogos" aria-expanded="@catalogosOpen" type="button">
-                <span aria-hidden="true">@(catalogosOpen ? "▼" : "►")</span> CatÃ¡logos
-            </button>
-        </div>
-        @if (catalogosOpen && Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+    <nav class="nav flex-column">
+        @if (Auth.Current.IsAuthenticated)
         {
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="tiendas">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tiendas
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
                 </NavLink>
             </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="empresas">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Empresas
+
+            <div class="nav-item px-3 mt-2">
+                <NavLink class="nav-link" href="evaluacion">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Evaluación
                 </NavLink>
             </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="categorias">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> CategorÃ­as
-                </NavLink>
+
+            <div class="nav-item px-3 mt-3">
+                <button class="nav-link btn btn-link text-decoration-none px-0" @onclick:stopPropagation="true" @onclick="ToggleCatalogos" aria-expanded="@catalogosOpen" type="button">
+                    <span aria-hidden="true">@(catalogosOpen ? "▼" : "►")</span> Catálogos
+                </button>
             </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="preguntas">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Preguntas
-                </NavLink>
-            </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="gerentes">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Gerentes
-                </NavLink>
-            </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="evaluadores">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Evaluadores
-                </NavLink>
-            </div>
+            @if (catalogosOpen && string.Equals(Auth.Current.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                <div class="nav-item px-4">
+                    <NavLink class="nav-link" href="tiendas">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tiendas
+                    </NavLink>
+                </div>
+                <div class="nav-item px-4">
+                    <NavLink class="nav-link" href="empresas">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Empresas
+                    </NavLink>
+                </div>
+                <div class="nav-item px-4">
+                    <NavLink class="nav-link" href="categorias">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Categorías
+                    </NavLink>
+                </div>
+                <div class="nav-item px-4">
+                    <NavLink class="nav-link" href="preguntas">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Preguntas
+                    </NavLink>
+                </div>
+                <div class="nav-item px-4">
+                    <NavLink class="nav-link" href="gerentes">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Gerentes
+                    </NavLink>
+                </div>
+                <div class="nav-item px-4">
+                    <NavLink class="nav-link" href="evaluadores">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Evaluadores
+                    </NavLink>
+                </div>
+            }
         }
-        
-            }\n    </nav>
+    </nav>
 </div>
 
-@code {\n    private bool catalogosOpen = false;\n    private void ToggleCatalogos() => catalogosOpen = !catalogosOpen;\n\n    private async Task OnLogout()\n    {\n        await Auth.LogoutAsync();\n        Nav.NavigateTo("/login", forceLoad: true);\n    }\n}
+@code {
+    private bool catalogosOpen = false;
+    private void ToggleCatalogos() => catalogosOpen = !catalogosOpen;
 
+    private async Task OnLogout()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("/login", true);
+    }
+}
 

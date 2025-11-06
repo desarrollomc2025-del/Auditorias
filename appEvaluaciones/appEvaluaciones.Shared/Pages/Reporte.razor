@@ -71,7 +71,7 @@ else
     {
         if (!Auth.Current.IsAuthenticated)
         {
-            Nav.NavigateTo("/login", forceLoad: true);
+            Nav.NavigateTo("/login", true);
             return;
         }
         try
