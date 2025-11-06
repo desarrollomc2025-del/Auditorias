@@ -138,3 +138,5 @@ public static class MauiProgram
 }
 
 
+        // Auth service (JWT)
+        builder.Services.AddSingleton<IAuthService, ApiAuthService>();
