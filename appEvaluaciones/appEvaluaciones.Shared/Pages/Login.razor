@@ -21,7 +21,5 @@
 </form>
 
 @code {
-    private bool hasError => Microsoft.AspNetCore.WebUtilities.QueryHelpers
-        .ParseQuery(new Uri(Nav.Uri).Query)
-        .ContainsKey("e");
+    private bool hasError => Nav.Uri.Contains("?e=") || Nav.Uri.Contains("&e=");
 }
