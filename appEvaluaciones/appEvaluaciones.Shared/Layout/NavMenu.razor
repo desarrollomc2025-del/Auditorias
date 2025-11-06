@@ -8,7 +8,7 @@
             @if (Auth.Current.IsAuthenticated)
             {
                 <span class="me-2 small">@($"Usuario: {Auth.Current.Username} ({Auth.Current.Role})")</span>
-                <button class="btn btn-sm btn-outline-light" @onclick="OnLogout">Salir</button>
+                <a class="btn btn-sm btn-outline-light" href="/logout">Salir</a>
             }
             else
             {
@@ -82,10 +82,5 @@
     private bool catalogosOpen = false;
     private void ToggleCatalogos() => catalogosOpen = !catalogosOpen;
 
-    private async Task OnLogout()
-    {
-        await Auth.LogoutAsync();
-        Nav.NavigateTo("/login", true);
-    }
+    // Logout se maneja via endpoint /logout
 }
-

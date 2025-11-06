@@ -1,49 +1,20 @@
 @page "/login"
-@inject IAuthService Auth
-@inject NavigationManager Nav
 
 <h3>Iniciar sesión</h3>
 
-@if (!string.IsNullOrEmpty(error))
+@if (Context.Request.Query.ContainsKey("e"))
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="alert alert-danger">Usuario o contraseña inválidos</div>
 }
 
-<EditForm Model="model" OnValidSubmit="DoLogin">
-    <DataAnnotationsValidator />
+<form method="post" action="/auth/cookie-login">
     <div class="mb-3">
         <label class="form-label">Usuario</label>
-        <InputText class="form-control" @bind-Value="model.Username" />
+        <input class="form-control" name="username" />
     </div>
     <div class="mb-3">
         <label class="form-label">Contraseña</label>
-        <InputText class="form-control" @bind-Value="model.Password" type="password" />
+        <input class="form-control" name="password" type="password" />
     </div>
     <button type="submit" class="btn btn-primary">Entrar</button>
-</EditForm>
-
-@code {
-    private LoginModel model = new();
-    private string? error;
-
-    private async Task DoLogin()
-    {
-        try
-        {
-            error = null;
-            await Auth.LoginAsync(model.Username, model.Password);
-            Nav.NavigateTo("/");
-        }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-        }
-    }
-
-    private sealed class LoginModel
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
-}
-
+</form>
