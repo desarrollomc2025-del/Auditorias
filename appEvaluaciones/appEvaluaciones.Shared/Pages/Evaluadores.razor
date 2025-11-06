@@ -51,7 +51,7 @@ else
 }
 
 @code {
-    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, "Admin", System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo("/login", true); return; } }
+    
     private List<Evaluador> items = new();
     private bool loading = true;
     private string? error;

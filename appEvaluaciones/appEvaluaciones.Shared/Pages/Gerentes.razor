@@ -56,7 +56,7 @@ else
 }
 
 @code {
-    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, "Admin", System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo("/login", true); return; } }
+    
     private List<Gerente> items = new();
     private bool loading = true;
     private string? error;
