@@ -1,4 +1,4 @@
-﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+﻿@attribute [Authorize(Roles="Admin")]
 @inject NavigationManager Nav
 @page "/evaluadores/new"
 @page "/evaluadores/{id:int}"
@@ -89,5 +89,7 @@ else
 
     private void Volver() => Nav.NavigateTo("/evaluadores");
 }
+
+
 
 

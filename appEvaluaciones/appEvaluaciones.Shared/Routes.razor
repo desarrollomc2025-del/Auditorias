@@ -1,5 +1,6 @@
 @using appEvaluaciones.Shared.Pages
 
+<CascadingAuthenticationState>
 <Router AppAssembly="typeof(Layout.MainLayout).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
@@ -11,4 +12,5 @@
         </LayoutView>
     </NotFound>
 </Router>
+</CascadingAuthenticationState>
 

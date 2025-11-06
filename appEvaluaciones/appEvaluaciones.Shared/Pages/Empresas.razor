@@ -1,4 +1,4 @@
-﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+﻿@attribute [Authorize(Roles="Admin")]
 @inject NavigationManager Nav
 @page "/empresas"
 @inject IEmpresasService EmpresasService
@@ -95,5 +95,7 @@ else
 
     private Task Reload() => Load();
 }
+
+
 
 

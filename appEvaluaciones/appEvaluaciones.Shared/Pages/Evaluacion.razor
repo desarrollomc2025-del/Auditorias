@@ -1,3 +1,4 @@
+﻿@attribute [Authorize]
 @page "/evaluacion"
 @inject IPreguntasService PreguntasService
 @inject IEvidenciasService EvidenciasService
@@ -6,9 +7,9 @@
 @inject appEvaluaciones.Shared.Services.IAuthService Auth
 @inject NavigationManager Nav
 
-<PageTitle>Evaluación</PageTitle>
+<PageTitle>EvaluaciÃ³n</PageTitle>
 
-<h1>Evaluación</h1>
+<h1>EvaluaciÃ³n</h1>
 
 @if (loading)
 {
@@ -23,7 +24,7 @@ else
     <div class="alert alert-info">
         <div class="d-flex flex-wrap align-items-center gap-3">
             <div><strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)</div>
-            <div class="text-muted small">Evaluación: @evaluacionId</div>
+            <div class="text-muted small">EvaluaciÃ³n: @evaluacionId</div>
         </div>
     </div>
 
@@ -41,7 +42,7 @@ else
                     </select>
                 </div>
                 <div class="col-md-3 d-grid gap-2">
-                    <button type="button" class="btn btn-success" @onclick="GuardarEvaluacion">Guardar evaluación</button>
+                    <button type="button" class="btn btn-success" @onclick="GuardarEvaluacion">Guardar evaluaciÃ³n</button>
                     <button type="button" class="btn btn-outline-primary" @onclick="FinalizarYReporte">Finalizar y PDF</button>
                 </div>
             </div>
@@ -52,10 +53,10 @@ else
         @foreach (var q in preguntas)
         {
             <div class="mb-3 pb-2 border-bottom">
-                <div class="fw-semibold">[@q.Codigo] @q.TextoPregunta <span class="text-muted">(máx. @q.Ponderacion.ToString("0.###"))</span></div>
+                <div class="fw-semibold">[@q.Codigo] @q.TextoPregunta <span class="text-muted">(mÃ¡x. @q.Ponderacion.ToString("0.###"))</span></div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" id=@($"q_{q.PreguntaId}_si") name=@($"q_{q.PreguntaId}") checked=@(answers[q.PreguntaId] == true) @onchange=@(() => SetAnswer(q.PreguntaId, true)) />
-                    <label class="form-check-label" for=@($"q_{q.PreguntaId}_si")>Sí</label>
+                    <label class="form-check-label" for=@($"q_{q.PreguntaId}_si")>SÃ­</label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" id=@($"q_{q.PreguntaId}_no") name=@($"q_{q.PreguntaId}") checked=@(answers[q.PreguntaId] == false) @onchange=@(() => SetAnswer(q.PreguntaId, false)) />
@@ -117,11 +118,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (!Auth.Current.IsAuthenticated)
-        {
-            Nav.NavigateTo("/login", true);
-            return;
-        }
         try
         {
             loading = true;
@@ -129,8 +125,8 @@ else
             var all = await PreguntasService.GetAllAsync();
             preguntas = all.OrderBy(p => p.CategoriaId).ThenBy(p => p.Orden).ThenBy(p => p.PreguntaId).ToList();
             tiendas = (await TiendasService.GetAllAsync()).OrderBy(t => t.Codigo).ThenBy(t => t.Descripcion).ToList();
-            // La evaluación se creará en la primera acción que requiera ID
-            // Por defecto, marcar todas las preguntas como "Sí"
+            // La evaluaciÃ³n se crearÃ¡ en la primera acciÃ³n que requiera ID
+            // Por defecto, marcar todas las preguntas como "SÃ­"
             answers = preguntas.ToDictionary(p => p.PreguntaId, _ => (bool?)true);
             comentarios = preguntas.ToDictionary(p => p.PreguntaId, _ => (string?)null);
             evidencias = preguntas.ToDictionary(p => p.PreguntaId, _ => new List<Evidencia>());
@@ -264,6 +260,7 @@ else
         }
     }
 }
+
 
 
 

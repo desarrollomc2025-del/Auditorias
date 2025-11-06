@@ -1,3 +1,4 @@
+﻿@attribute [Authorize]
 @page "/reporte/{id:int}"
 @inject IPreguntasService PreguntasService
 @inject IEvidenciasService EvidenciasService
@@ -8,7 +9,7 @@
 @using Microsoft.JSInterop
 @inject IJSRuntime JS
 
-<PageTitle>Reporte Evaluación</PageTitle>
+<PageTitle>Reporte EvaluaciÃ³n</PageTitle>
 
 @if (loading)
 {
@@ -21,8 +22,8 @@ else if (error is not null)
 else
 {
     <div class="container my-3">
-        <h2>Reporte de Evaluación</h2>
-        <div class="text-muted">Evaluación: @id</div>
+        <h2>Reporte de EvaluaciÃ³n</h2>
+        <div class="text-muted">EvaluaciÃ³n: @id</div>
         <div class="mt-2">
             <strong>Puntaje:</strong> @total.ToString("0.###") de @maximo.ToString("0.###") (@porcentaje.ToString("0.##")%)
         </div>
@@ -32,7 +33,7 @@ else
             var p = preguntasById[d.PreguntaId];
             <div class="mb-3">
                 <div class="fw-semibold">[@p.Codigo] @p.TextoPregunta</div>
-                <div>Respuesta: <strong>@(d.Respuesta == true ? "Sí" : d.Respuesta == false ? "No" : "N/A")</strong> — Ponderación: @d.Ponderacion.ToString("0.###")</div>
+                <div>Respuesta: <strong>@(d.Respuesta == true ? "SÃ­" : d.Respuesta == false ? "No" : "N/A")</strong> â€” PonderaciÃ³n: @d.Ponderacion.ToString("0.###")</div>
                 @if (!string.IsNullOrWhiteSpace(d.Comentario))
                 {
                     <div class="mt-1"><em>Comentario:</em> @d.Comentario</div>
@@ -69,11 +70,6 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!Auth.Current.IsAuthenticated)
-        {
-            Nav.NavigateTo("/login", true);
-            return;
-        }
         try
         {
             loading = true;
@@ -103,10 +99,11 @@ else
     {
         if (firstRender && error is null)
         {
-            // Pequeño delay para permitir que las imágenes terminen de cargar
+            // PequeÃ±o delay para permitir que las imÃ¡genes terminen de cargar
             await Task.Delay(500);
             await JS.InvokeVoidAsync("window.print");
         }
     }
 }
+
 

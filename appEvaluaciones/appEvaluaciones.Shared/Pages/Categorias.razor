@@ -1,4 +1,4 @@
-﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+﻿@attribute [Authorize(Roles="Admin")]
 @inject NavigationManager Nav
 @page "/categorias"
 @inject ICategoriasService CategoriasService
@@ -53,7 +53,6 @@ else
 }
 
 @code {
-    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, "Admin", System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo("/login", true); return; } }
     private List<Categoria> items = new();
     private bool loading = true;
     private string? error;
@@ -95,5 +94,6 @@ else
 
     private Task Reload() => Load();
 }
+
 
 

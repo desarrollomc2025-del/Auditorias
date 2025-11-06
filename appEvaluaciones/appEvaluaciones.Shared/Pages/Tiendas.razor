@@ -1,4 +1,4 @@
-﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+﻿@attribute [Authorize(Roles="Admin")]
 @inject NavigationManager Nav
 @page "/tiendas"
 @inject ITiendasService TiendasService
@@ -114,4 +114,6 @@ else
     private static string MapLinkUrl(double lat, double lng)
         => $"https://www.google.com/maps?q={lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 }
+
+
 
