@@ -23,6 +23,9 @@ public static class MauiProgram
 
         builder.Services.AddMauiBlazorWebView();
 
+        // Auth service (JWT)
+        builder.Services.AddSingleton<IAuthService, ApiAuthService>();
+
         // HTTP client to Web backend (adjust BaseAddress to your server)
 #if ANDROID
         // Android emulator reaches the host via 10.0.2.2. Use HTTPS dev port.
@@ -136,7 +139,3 @@ public static class MauiProgram
         return builder.Build();
     }
 }
-
-
-        // Auth service (JWT)
-        builder.Services.AddSingleton<IAuthService, ApiAuthService>();
