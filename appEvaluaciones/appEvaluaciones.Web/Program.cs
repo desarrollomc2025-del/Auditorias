@@ -4,6 +4,7 @@ using appEvaluaciones.Web.Services;
 using appEvaluaciones.Web.Endpoints;
 using appEvaluaciones.Web.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -25,10 +26,12 @@ builder.Services.AddScoped<ICategoriasService, CategoriasDataService>();
 builder.Services.AddScoped<IPreguntasService, PreguntasDataService>();
 builder.Services.AddScoped<IEvidenciasService, EvidenciasDataService>();
 builder.Services.AddScoped<IEvaluacionesService, EvaluacionesDataService>();
-// Note: Singleton simplifies demo state across renders; for production, integrate proper auth with cookies/JWT
-builder.Services.AddSingleton<IAuthService, WebAuthService>();
+builder.Services.AddScoped<IAuthService, WebAuthService>();
 
-// Configure JWT (must be before Build())
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCascadingAuthenticationState();
+
+// Configure Cookies + JWT (must be before Build())
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
@@ -38,7 +41,18 @@ if (jwtSection is null || string.IsNullOrWhiteSpace(jwtSection.Key))
     jwtSection = new JwtOptions { Issuer = "appEvaluaciones", Audience = "appEvaluaciones", Key = "dev-secret-key-change-me-please-1234567890" };
 }
 var key = Encoding.UTF8.GetBytes(jwtSection.Key);
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login";
+        options.AccessDeniedPath = "/login";
+        options.SlidingExpiration = true;
+    })
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -53,8 +67,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("Evaluador", p => p.RequireRole("Evaluador", "Admin"));
-    options.AddPolicy("Admin", p => p.RequireRole("Admin"));
+    options.AddPolicy("Evaluador", p =>
+    {
+        p.RequireRole("Evaluador", "Admin");
+        p.AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme);
+    });
+    options.AddPolicy("Admin", p =>
+    {
+        p.RequireRole("Admin");
+        p.AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme);
+    });
 });
 
 var app = builder.Build();

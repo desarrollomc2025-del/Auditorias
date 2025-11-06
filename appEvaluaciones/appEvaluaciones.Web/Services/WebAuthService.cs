@@ -1,15 +1,29 @@
 using System.Data;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Dapper;
 using appEvaluaciones.Shared.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace appEvaluaciones.Web.Services;
 
-public sealed class WebAuthService(ISqlConnectionFactory factory) : IAuthService
+public sealed class WebAuthService(ISqlConnectionFactory factory, IHttpContextAccessor httpAccessor) : IAuthService
 {
-    private AuthState _state = new(false, null, null, null);
-    public AuthState Current => _state;
+    public AuthState Current
+    {
+        get
+        {
+            var user = httpAccessor.HttpContext?.User;
+            if (user?.Identity?.IsAuthenticated != true)
+                return new AuthState(false, null, null, null);
+            var role = user.FindFirstValue(ClaimTypes.Role);
+            var evalidStr = user.FindFirstValue("evalid");
+            int? evalid = int.TryParse(evalidStr, out var v) ? v : null;
+            return new AuthState(true, user.Identity?.Name, role, evalid);
+        }
+    }
 
     public async Task<AuthState> LoginAsync(string username, string password, CancellationToken ct = default)
     {
@@ -26,14 +40,27 @@ FROM dbo.Usuarios WHERE Usuario = @u";
         if (row.PasswordHash is null || !hash.SequenceEqual(row.PasswordHash))
             throw new InvalidOperationException("Usuario o contraseña incorrectos");
 
-        _state = new AuthState(true, row.Usuario, row.Rol, row.EvaluadorId);
-        return _state;
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Name, row.Usuario),
+            new(ClaimTypes.Role, row.Rol)
+        };
+        if (row.EvaluadorId.HasValue)
+            claims.Add(new Claim("evalid", row.EvaluadorId.Value.ToString()));
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        var props = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+        };
+        await httpAccessor.HttpContext!.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props);
+        return Current;
     }
 
     public Task LogoutAsync()
     {
-        _state = new AuthState(false, null, null, null);
-        return Task.CompletedTask;
+        return httpAccessor.HttpContext!.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }
 }
-
