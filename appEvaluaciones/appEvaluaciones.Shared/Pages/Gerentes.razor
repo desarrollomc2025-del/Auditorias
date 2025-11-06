@@ -1,3 +1,5 @@
+﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @page "/gerentes"
 @inject IGerentesService GerentesService
 @inject NavigationManager Nav
@@ -26,7 +28,7 @@ else
         <thead>
             <tr>
                 <th>Id</th>
-                <th>Código</th>
+                <th>CÃ³digo</th>
                 <th>Nombre</th>
                 <th>Rol</th>
                 <th>Regional</th>
@@ -54,6 +56,7 @@ else
 }
 
 @code {
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
     private List<Gerente> items = new();
     private bool loading = true;
     private string? error;
@@ -85,7 +88,7 @@ else
     private void Editar(int id) => Nav.NavigateTo($"/gerentes/{id}");
     private async Task Eliminar(int id)
     {
-        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar gerente {id} definitivamente?"))
+        if (await JS.InvokeAsync<bool>("confirm", $"Â¿Eliminar gerente {id} definitivamente?"))
         {
             await GerentesService.DeleteAsync(id);
             await Load();
@@ -95,4 +98,5 @@ else
 
     private Task Reload() => Load();
 }
+
 

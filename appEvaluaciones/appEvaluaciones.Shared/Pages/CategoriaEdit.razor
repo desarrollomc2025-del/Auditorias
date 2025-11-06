@@ -1,11 +1,13 @@
+﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @page "/categorias/new"
 @page "/categorias/{id:int}"
 @inject ICategoriasService CategoriasService
 @inject NavigationManager Nav
 
-<PageTitle>Categoría</PageTitle>
+<PageTitle>CategorÃ­a</PageTitle>
 
-<h3>@(isNew ? "Nueva categoría" : $"Editar categoría #{model.CategoriaId}")</h3>
+<h3>@(isNew ? "Nueva categorÃ­a" : $"Editar categorÃ­a #{model.CategoriaId}")</h3>
 
 @if (loading)
 {
@@ -19,15 +21,15 @@ else
 {
     <EditForm Model="model" OnValidSubmit="Guardar">
         <div class="mb-3">
-            <label class="form-label">Código</label>
+            <label class="form-label">CÃ³digo</label>
             <input class="form-control" @bind-value="model.Codigo" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Descripción</label>
+            <label class="form-label">DescripciÃ³n</label>
             <input class="form-control" @bind-value="model.Descripcion" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Ponderación</label>
+            <label class="form-label">PonderaciÃ³n</label>
             <input class="form-control" type="number" step="0.001" min="0" @bind-value="model.Ponderacion" />
         </div>
         <div class="form-check my-3">
@@ -42,6 +44,7 @@ else
 }
 
 @code {
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
     [Parameter] public int? Id { get; set; }
 
     private bool isNew => !Id.HasValue;
@@ -65,7 +68,7 @@ else
                 var existing = await CategoriasService.GetByIdAsync(id);
                 if (existing is null)
                 {
-                    error = "No se encontró la categoría";
+                    error = "No se encontrÃ³ la categorÃ­a";
                 }
                 else
                 {
@@ -91,4 +94,5 @@ else
 
     private void Volver() => Nav.NavigateTo("/categorias");
 }
+
 

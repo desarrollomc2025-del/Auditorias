@@ -1,3 +1,5 @@
+﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @page "/tiendas/new"
 @page "/tiendas/{id:int}"
 @inject ITiendasService TiendasService
@@ -32,15 +34,15 @@ else
             </select>
         </div>
         <div class="mb-3">
-            <label class="form-label">Código</label>
+            <label class="form-label">CÃ³digo</label>
             <input class="form-control" @bind-value="model.Codigo" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Código interno</label>
+            <label class="form-label">CÃ³digo interno</label>
             <input class="form-control" @bind-value="model.CodigoInterno" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Descripción</label>
+            <label class="form-label">DescripciÃ³n</label>
             <input class="form-control" @bind-value="model.Descripcion" />
         </div>
         <div class="row">
@@ -65,6 +67,7 @@ else
 }
 
 @code {
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
     [Parameter] public int? Id { get; set; }
 
     private bool isNew => !Id.HasValue;
@@ -91,7 +94,7 @@ else
                 var existing = await TiendasService.GetByIdAsync(id);
                 if (existing is null)
                 {
-                    error = "No se encontró la tienda";
+                    error = "No se encontrÃ³ la tienda";
                 }
                 else
                 {
@@ -125,3 +128,4 @@ else
 
     private void Volver() => Nav.NavigateTo("/tiendas");
 }
+

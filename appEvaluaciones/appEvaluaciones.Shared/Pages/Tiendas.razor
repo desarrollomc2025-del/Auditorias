@@ -1,3 +1,5 @@
+﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @page "/tiendas"
 @inject ITiendasService TiendasService
 @inject NavigationManager Nav
@@ -27,9 +29,9 @@ else
             <tr>
                 <th>Id</th>
                 <th>Empresa</th>
-                <th>Código</th>
+                <th>CÃ³digo</th>
                 <th>Interno</th>
-                <th>Descripción</th>
+                <th>DescripciÃ³n</th>
                 <th>Mapa</th>
                 <th></th>
             </tr>
@@ -48,7 +50,7 @@ else
                     {
                         var imgUrl = MapUrl(t.Latitud.Value, t.Longitud.Value, 200, 120, 15);
                         var linkUrl = MapLinkUrl(t.Latitud.Value, t.Longitud.Value);
-                        <a href="@linkUrl" target="_blank" rel="noopener noreferrer" title="Abrir mapa en nueva pestaña">
+                        <a href="@linkUrl" target="_blank" rel="noopener noreferrer" title="Abrir mapa en nueva pestaÃ±a">
                             <img src="@imgUrl" alt="Mapa" width="200" height="120" style="object-fit:cover;border-radius:6px;border:1px solid #ddd;" />
                         </a>
                     }
@@ -64,6 +66,7 @@ else
 }
 
 @code {
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
     private List<Tienda> tiendas = new();
     private bool loading = true;
     private string? error;
@@ -95,7 +98,7 @@ else
     private void Editar(int id) => Nav.NavigateTo($"/tiendas/{id}");
     private async Task Eliminar(int id)
     {
-        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar tienda {id} definitivamente?"))
+        if (await JS.InvokeAsync<bool>("confirm", $"Â¿Eliminar tienda {id} definitivamente?"))
         {
             await TiendasService.DeleteAsync(id);
             await Load();
@@ -111,3 +114,4 @@ else
     private static string MapLinkUrl(double lat, double lng)
         => $"https://www.google.com/maps?q={lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 }
+

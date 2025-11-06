@@ -1,3 +1,5 @@
+﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @page "/preguntas"
 @inject IPreguntasService PreguntasService
 @inject ICategoriasService CategoriasService
@@ -28,9 +30,9 @@ else
             <tr>
                 <th>Id</th>
                 <th>Categoria</th>
-                <th>Código</th>
+                <th>CÃ³digo</th>
                 <th>Texto</th>
-                <th>Ponderación</th>
+                <th>PonderaciÃ³n</th>
                 <th>Orden</th>
                 <th></th>
             </tr>
@@ -57,6 +59,7 @@ else
 }
 
 @code {
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
     private List<Pregunta> items = new();
     private List<Categoria> categorias = new();
     private bool loading = true;
@@ -90,7 +93,7 @@ else
     private void Editar(int id) => Nav.NavigateTo($"/preguntas/{id}");
     private async Task Eliminar(int id)
     {
-        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar pregunta {id} definitivamente?"))
+        if (await JS.InvokeAsync<bool>("confirm", $"Â¿Eliminar pregunta {id} definitivamente?"))
         {
             await PreguntasService.DeleteAsync(id);
             await Load();
@@ -100,4 +103,5 @@ else
 
     private Task Reload() => Load();
 }
+
 

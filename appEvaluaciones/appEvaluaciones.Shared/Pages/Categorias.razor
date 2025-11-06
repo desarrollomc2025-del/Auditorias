@@ -1,14 +1,16 @@
+﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @page "/categorias"
 @inject ICategoriasService CategoriasService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
-<PageTitle>Categorías</PageTitle>
+<PageTitle>CategorÃ­as</PageTitle>
 
-<h1>Categorías</h1>
+<h1>CategorÃ­as</h1>
 
 <div class="mb-3">
-    <button class="btn btn-primary" @onclick="Nueva">Nueva categoría</button>
+    <button class="btn btn-primary" @onclick="Nueva">Nueva categorÃ­a</button>
     <button class="btn btn-secondary ms-2" @onclick="Reload">Refrescar</button>
   </div>
 
@@ -26,9 +28,9 @@ else
         <thead>
             <tr>
                 <th>Id</th>
-                <th>Código</th>
-                <th>Descripción</th>
-                <th>Ponderación</th>
+                <th>CÃ³digo</th>
+                <th>DescripciÃ³n</th>
+                <th>PonderaciÃ³n</th>
                 <th></th>
             </tr>
         </thead>
@@ -51,6 +53,7 @@ else
 }
 
 @code {
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
     private List<Categoria> items = new();
     private bool loading = true;
     private string? error;
@@ -82,7 +85,7 @@ else
     private void Editar(int id) => Nav.NavigateTo($"/categorias/{id}");
     private async Task Eliminar(int id)
     {
-        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar categoría {id} definitivamente?"))
+        if (await JS.InvokeAsync<bool>("confirm", $"Â¿Eliminar categorÃ­a {id} definitivamente?"))
         {
             await CategoriasService.DeleteAsync(id);
             await Load();
@@ -92,4 +95,5 @@ else
 
     private Task Reload() => Load();
 }
+
 

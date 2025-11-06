@@ -2,6 +2,8 @@
 @inject IPreguntasService PreguntasService
 @inject IEvidenciasService EvidenciasService
 @inject IEvaluacionesService EvaluacionesService
+@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @using appEvaluaciones.Shared.Models
 @using Microsoft.JSInterop
 @inject IJSRuntime JS
@@ -67,6 +69,11 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!Auth.Current.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
         try
         {
             loading = true;

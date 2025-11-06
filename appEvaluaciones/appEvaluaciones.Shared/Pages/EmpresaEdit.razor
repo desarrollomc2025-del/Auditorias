@@ -1,3 +1,5 @@
+﻿@inject appEvaluaciones.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
 @page "/empresas/new"
 @page "/empresas/{id:int}"
 @inject IEmpresasService EmpresasService
@@ -19,10 +21,10 @@ else
 {
     <EditForm Model="model" OnValidSubmit="Guardar">
         <div class="mb-3">
-            <label class="form-label">Código</label>
+            <label class="form-label">CÃ³digo</label>
             @if (isNew)
             {
-                <input class="form-control" value="Se asigna automáticamente al guardar" readonly />
+                <input class="form-control" value="Se asigna automÃ¡ticamente al guardar" readonly />
             }
             else
             {
@@ -34,7 +36,7 @@ else
             <input class="form-control" @bind-value="model.Nombre" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Dirección</label>
+            <label class="form-label">DirecciÃ³n</label>
             <input class="form-control" @bind-value="model.Direccion" />
         </div>
         <div class="form-check my-3">
@@ -49,6 +51,7 @@ else
 }
 
 @code {
+    protected override void OnInitialized(){ if(!(Auth.Current.IsAuthenticated && string.Equals(Auth.Current.Role, 'Admin', System.StringComparison.OrdinalIgnoreCase))){ Nav.NavigateTo('/login', true); return; } }
     [Parameter] public int? Id { get; set; }
 
     private bool isNew => !Id.HasValue;
@@ -71,7 +74,7 @@ else
                 var existing = await EmpresasService.GetByIdAsync(id);
                 if (existing is null)
                 {
-                    error = "No se encontró la empresa";
+                    error = "No se encontrÃ³ la empresa";
                 }
                 else
                 {
@@ -97,4 +100,5 @@ else
 
     private void Volver() => Nav.NavigateTo("/empresas");
 }
+
 
